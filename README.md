@@ -4,5 +4,5 @@ Deep copy generator
 ## Usage
 
 ```bash
-deep-copy [--pointer-receiver] --type package.Type /path/to/package/containing/type
+deep-copy [--pointer-receiver] --type Type /path/to/package/containing/type
 ```
