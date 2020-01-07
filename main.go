@@ -36,19 +36,14 @@ func main() {
 
 	var buf bytes.Buffer
 
-	buf.WriteString("func (o ")
+	var ptr string
 	if *pointerReceiverF {
-		buf.WriteRune('*')
+		ptr = "*"
 	}
-	buf.WriteString(sel)
-	buf.WriteString(") DeepCopy() ")
-	if *pointerReceiverF {
-		buf.WriteRune('*')
-	}
-	buf.WriteString(sel)
-	buf.WriteString(" {\nvar copy ")
-	buf.WriteString(sel)
-	buf.WriteRune('\n')
+	fmt.Fprintf(&buf, `// DeepCopy generates a deep copy of %s%s
+func (o %s%s) DeepCopy() %s%s {
+	var cp %s
+`, ptr, sel, ptr, sel, ptr, sel, sel)
 
 	imports := map[string]string{}
 	var name string
@@ -60,12 +55,8 @@ func main() {
 		}
 
 		sink := "o"
-		if *pointerReceiverF {
-			buf.WriteString("copy = *o\n")
-		} else {
-			buf.WriteString("copy = o\n")
-		}
-		walkType(sink, "copy", name, obj, &buf, imports)
+		fmt.Fprintf(&buf, "cp = %s%s\n", ptr, sink)
+		walkType(sink, "cp", name, obj, &buf, imports)
 	}
 
 	if name == "" {
@@ -73,9 +64,9 @@ func main() {
 	}
 
 	if *pointerReceiverF {
-		buf.WriteString("return &copy\n}")
+		buf.WriteString("return &cp\n}")
 	} else {
-		buf.WriteString("return copy\n}")
+		buf.WriteString("return cp\n}")
 	}
 
 	var file bytes.Buffer
