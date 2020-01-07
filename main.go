@@ -77,9 +77,9 @@ func (o %s%s) DeepCopy() %s%s {
 		file.WriteString("import (\n")
 		for name, path := range imports {
 			if strings.HasSuffix(path, name) {
-				fmt.Fprintf(&file, "%q", path)
+				fmt.Fprintf(&file, "%q\n", path)
 			} else {
-				fmt.Fprintf(&file, "%s %q", name, path)
+				fmt.Fprintf(&file, "%s %q\n", name, path)
 			}
 		}
 		file.WriteString(")\n")
