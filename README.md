@@ -39,6 +39,8 @@ deep-copy [--pointer-receiver] [--skip Selector1,Selector.Two] --type Type /path
 Given the following types:
 
 ```go
+package pkg
+
 type Foo struct {
 	Map map[string]*Bar
 	ch  chan float32
