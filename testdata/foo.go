@@ -1,4 +1,4 @@
-package main
+package testdata
 
 type Foo struct {
 	Map map[*string]*Bar
