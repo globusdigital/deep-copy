@@ -276,9 +276,7 @@ func getElemType(t types.Type, x string, imports map[string]string, rawkind bool
 		pkg := obj.Obj().Pkg()
 		if pkg != nil {
 			name = pkg.Name()
-			if name == x {
-				name = ""
-			} else {
+			if name != x {
 				if path, ok := imports[name]; ok && path != pkg.Path() {
 					name = strings.ReplaceAll(pkg.Path(), "/", "_")
 				}
