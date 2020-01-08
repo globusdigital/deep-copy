@@ -199,11 +199,22 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			kind += v.Elem().String()
 		}
 
-		fmt.Fprintf(w, `if %s != nil {
+		if pointer {
+			fmt.Fprintf(w, `if %s != nil {
+	%s = make([]%s, len(%s))
+	for i := range %s {
+`, source, sink, kind, source, source)
+
+			walkType(source+"[i]", sink+"[i]", x, v.Elem(), w, imports)
+
+			fmt.Fprintf(w, "}\n}\n")
+		} else {
+			fmt.Fprintf(w, `if %s != nil {
 	%s = make([]%s, len(%s))
 	copy(%s, %s)
 }
 `, source, sink, kind, source, sink, source)
+		}
 	case *types.Pointer:
 		obj := objFromType(v.Elem())
 		var name, kind string
