@@ -18,6 +18,7 @@ import (
 var (
 	typeF            = flag.String("type", "", "the concrete type")
 	pointerReceiverF = flag.Bool("pointer-receiver", false, "the generated receiver type")
+	skipF            = flag.String("skip", "", "comma-separated field selectors to shallow copy")
 )
 
 func main() {
@@ -45,6 +46,11 @@ func (o %s%s) DeepCopy() %s%s {
 	var cp %s
 `, ptr, sel, ptr, sel, ptr, sel, sel)
 
+	skips := map[string]struct{}{}
+	for _, s := range strings.Split(*skipF, ",") {
+		skips[s] = struct{}{}
+	}
+
 	imports := map[string]string{}
 	var name string
 	for _, p := range packages {
@@ -56,7 +62,7 @@ func (o %s%s) DeepCopy() %s%s {
 
 		sink := "o"
 		fmt.Fprintf(&buf, "cp = %s%s\n", ptr, sink)
-		walkType(sink, "cp", name, obj, &buf, imports)
+		walkType(sink, "cp", name, obj, &buf, imports, skips)
 	}
 
 	if name == "" {
@@ -149,7 +155,7 @@ func exprFilter(t types.TypeAndValue, sel string, x string) Object {
 	return m
 }
 
-func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[string]string) {
+func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[string]string, skips map[string]struct{}) {
 	if m == nil {
 		return
 	}
@@ -170,7 +176,13 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			if needExported && !field.Exported() {
 				continue
 			}
-			walkType(source+"."+field.Name(), sink+"."+field.Name(), x, field.Type(), w, imports)
+			fname := field.Name()
+			sel := sink + "." + fname
+			sel = sel[strings.Index(sel, ".")+1:]
+			if _, ok := skips[sel]; ok {
+				continue
+			}
+			walkType(source+"."+fname, sink+"."+fname, x, field.Type(), w, imports, skips)
 		}
 	case *types.Slice:
 		kind, basic := getElemType(v.Elem(), x, imports, false)
@@ -187,7 +199,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	for i := range %s {
 `, source, sink, kind, source, source)
 
-			walkType(source+"[i]", sink+"[i]", x, v.Elem(), w, imports)
+			walkType(source+"[i]", sink+"[i]", x, v.Elem(), w, imports, skips)
 
 			fmt.Fprintf(w, "}\n}\n")
 		}
@@ -199,7 +211,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	*%s = *%s
 `, source, sink, kind, sink, source)
 
-		walkType(source, sink, x, v.Elem(), w, imports)
+		walkType(source, sink, x, v.Elem(), w, imports, skips)
 
 		fmt.Fprintf(w, "}\n")
 	case *types.Chan:
@@ -222,12 +234,12 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		if !kbasic {
 			ksink = "cpk"
 			fmt.Fprintf(w, "var %s %s\n", ksink, kkind)
-			walkType("k", ksink, x, v.Key(), w, imports)
+			walkType("k", ksink, x, v.Key(), w, imports, skips)
 		}
 		if !vbasic {
 			vsink = "cpv"
 			fmt.Fprintf(w, "var %s %s\n", vsink, vkind)
-			walkType("v", vsink, x, v.Elem(), w, imports)
+			walkType("v", vsink, x, v.Elem(), w, imports, skips)
 		}
 
 		fmt.Fprintf(w, "%s[%s] = %s", sink, ksink, vsink)
