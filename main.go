@@ -57,7 +57,7 @@ func (o %s%s) DeepCopy() %s%s {
 		name = p.Name
 		obj, err := locateType(name, sel, p)
 		if err != nil {
-			log.Fatalln("locating type", err)
+			log.Fatalln("Error locating type:", err)
 		}
 
 		sink := "o"
@@ -116,8 +116,11 @@ type Pointer interface {
 }
 
 func locateType(x, sel string, p *packages.Package) (Object, error) {
-	for _, t := range p.TypesInfo.Types {
-		m := exprFilter(t, sel, x)
+	for _, t := range p.TypesInfo.Defs {
+		if t == nil {
+			continue
+		}
+		m := exprFilter(t.Type(), sel, x)
 		if m == nil {
 			continue
 		}
@@ -141,8 +144,8 @@ func objFromType(typ types.Type) Object {
 	return m
 }
 
-func exprFilter(t types.TypeAndValue, sel string, x string) Object {
-	m := objFromType(t.Type)
+func exprFilter(t types.Type, sel string, x string) Object {
+	m := objFromType(t)
 	if m == nil {
 		return nil
 	}
@@ -222,8 +225,8 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 }
 `, source, sink, kind, source)
 	case *types.Map:
-		kkind, kbasic := getElemType(v.Key(), x, imports, true)
-		vkind, vbasic := getElemType(v.Elem(), x, imports, true)
+		kkind, kbasic := getElemType(v.Key(), x, imports, false)
+		vkind, vbasic := getElemType(v.Elem(), x, imports, false)
 
 		fmt.Fprintf(w, `if %s != nil {
 	%s = make(map[%s]%s, len(%s))
@@ -279,7 +282,7 @@ func getElemType(t types.Type, x string, imports map[string]string, rawkind bool
 		noncopy = true
 	}
 
-	if !rawkind && pointer {
+	if !rawkind && pointer && kind[0] != '*' {
 		kind = "*" + kind
 	}
 
