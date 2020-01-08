@@ -173,13 +173,15 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			walkType(source+"."+field.Name(), sink+"."+field.Name(), x, field.Type(), w, imports)
 		}
 	case *types.Slice:
-		kind, pointer := getElemType(v, x, imports)
+		kind, basic := getElemType(v.Elem(), x, imports, false)
 
-		if pointer {
-			kind = "*" + kind
-		}
-
-		if pointer {
+		if basic {
+			fmt.Fprintf(w, `if %s != nil {
+	%s = make([]%s, len(%s))
+	copy(%s, %s)
+}
+`, source, sink, kind, source, sink, source)
+		} else {
 			fmt.Fprintf(w, `if %s != nil {
 	%s = make([]%s, len(%s))
 	for i := range %s {
@@ -188,15 +190,9 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			walkType(source+"[i]", sink+"[i]", x, v.Elem(), w, imports)
 
 			fmt.Fprintf(w, "}\n}\n")
-		} else {
-			fmt.Fprintf(w, `if %s != nil {
-	%s = make([]%s, len(%s))
-	copy(%s, %s)
-}
-`, source, sink, kind, source, sink, source)
 		}
 	case *types.Pointer:
-		kind, _ := getElemType(v, x, imports)
+		kind, _ := getElemType(v.Elem(), x, imports, true)
 
 		fmt.Fprintf(w, `if %s != nil {
 	%s = new(%s)
@@ -207,22 +203,42 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 
 		fmt.Fprintf(w, "}\n")
 	case *types.Chan:
-		kind, pointer := getElemType(v, x, imports)
-
-		if pointer {
-			kind = "*" + kind
-		}
+		kind, _ := getElemType(v.Elem(), x, imports, false)
 
 		fmt.Fprintf(w, `if %s != nil {
 	%s = make(chan %s, cap(%s))
 }
 `, source, sink, kind, source)
+	case *types.Map:
+		kkind, kbasic := getElemType(v.Key(), x, imports, true)
+		vkind, vbasic := getElemType(v.Elem(), x, imports, true)
+
+		fmt.Fprintf(w, `if %s != nil {
+	%s = make(map[%s]%s, len(%s))
+	for k, v := range %s {
+`, source, sink, kkind, vkind, source, source)
+
+		ksink, vsink := "k", "v"
+		if !kbasic {
+			ksink = "cpk"
+			fmt.Fprintf(w, "var %s %s\n", ksink, kkind)
+			walkType("k", ksink, x, v.Key(), w, imports)
+		}
+		if !vbasic {
+			vsink = "cpv"
+			fmt.Fprintf(w, "var %s %s\n", vsink, vkind)
+			walkType("v", vsink, x, v.Elem(), w, imports)
+		}
+
+		fmt.Fprintf(w, "%s[%s] = %s", sink, ksink, vsink)
+
+		fmt.Fprintf(w, "}\n}\n")
 	}
 
 }
 
-func getElemType(v Pointer, x string, imports map[string]string) (string, bool) {
-	obj := objFromType(v.Elem())
+func getElemType(t types.Type, x string, imports map[string]string, rawkind bool) (string, bool) {
+	obj := objFromType(t)
 	var name, kind string
 	if obj != nil {
 		pkg := obj.Obj().Pkg()
@@ -240,9 +256,20 @@ func getElemType(v Pointer, x string, imports map[string]string) (string, bool) 
 		}
 		kind += obj.Obj().Name()
 	} else {
-		kind += v.Elem().String()
+		kind += t.String()
 	}
 
-	_, pointer := v.Elem().(*types.Pointer)
-	return kind, pointer
+	var pointer, noncopy bool
+	switch t.(type) {
+	case *types.Pointer:
+		pointer = true
+	case *types.Basic, *types.Interface:
+		noncopy = true
+	}
+
+	if !rawkind && pointer {
+		kind = "*" + kind
+	}
+
+	return kind, noncopy
 }
