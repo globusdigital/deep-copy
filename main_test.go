@@ -60,13 +60,8 @@ func (o Foo) DeepCopy() Foo {
 	var cp Foo
 	cp = o
 	if o.Map != nil {
-		cp.Map = make(map[*string]*Bar, len(o.Map))
+		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
-			var cpk *string
-			if k != nil {
-				cpk = new(string)
-				*cpk = *k
-			}
 			var cpv *Bar
 			if v != nil {
 				cpv = new(Bar)
@@ -76,7 +71,7 @@ func (o Foo) DeepCopy() Foo {
 					copy(cpv.Slice, v.Slice)
 				}
 			}
-			cp.Map[cpk] = cpv
+			cp.Map[k] = cpv
 		}
 	}
 	if o.ch != nil {
@@ -97,13 +92,8 @@ func (o *Foo) DeepCopy() *Foo {
 	var cp Foo
 	cp = *o
 	if o.Map != nil {
-		cp.Map = make(map[*string]*Bar, len(o.Map))
+		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
-			var cpk *string
-			if k != nil {
-				cpk = new(string)
-				*cpk = *k
-			}
 			var cpv *Bar
 			if v != nil {
 				cpv = new(Bar)
@@ -113,7 +103,7 @@ func (o *Foo) DeepCopy() *Foo {
 					copy(cpv.Slice, v.Slice)
 				}
 			}
-			cp.Map[cpk] = cpv
+			cp.Map[k] = cpv
 		}
 	}
 	if o.ch != nil {
@@ -134,19 +124,14 @@ func (o *Foo) DeepCopy() *Foo {
 	var cp Foo
 	cp = *o
 	if o.Map != nil {
-		cp.Map = make(map[*string]*Bar, len(o.Map))
+		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
-			var cpk *string
-			if k != nil {
-				cpk = new(string)
-				*cpk = *k
-			}
 			var cpv *Bar
 			if v != nil {
 				cpv = new(Bar)
 				*cpv = *v
 			}
-			cp.Map[cpk] = cpv
+			cp.Map[k] = cpv
 		}
 	}
 	if o.ch != nil {
