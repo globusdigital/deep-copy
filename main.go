@@ -173,30 +173,10 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			walkType(source+"."+field.Name(), sink+"."+field.Name(), x, field.Type(), w, imports)
 		}
 	case *types.Slice:
-		obj := objFromType(v.Elem())
-		_, pointer := v.Elem().(*types.Pointer)
-		var name, kind string
+		kind, pointer := getElemType(v, x, imports)
 
 		if pointer {
-			kind = "*"
-		}
-		if obj != nil {
-			pkg := obj.Obj().Pkg()
-			if pkg != nil {
-				name = pkg.Name()
-				if name == x {
-					name = ""
-				} else {
-					if path, ok := imports[name]; ok && path != pkg.Path() {
-						name = strings.ReplaceAll(pkg.Path(), "/", "_")
-					}
-					imports[name] = pkg.Path()
-					kind += name + "."
-				}
-			}
-			kind += obj.Obj().Name()
-		} else {
-			kind += v.Elem().String()
+			kind = "*" + kind
 		}
 
 		if pointer {
@@ -216,26 +196,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 `, source, sink, kind, source, sink, source)
 		}
 	case *types.Pointer:
-		obj := objFromType(v.Elem())
-		var name, kind string
-		if obj != nil {
-			pkg := obj.Obj().Pkg()
-			if pkg != nil {
-				name = pkg.Name()
-				if name == x {
-					name = ""
-				} else {
-					if path, ok := imports[name]; ok && path != pkg.Path() {
-						name = strings.ReplaceAll(pkg.Path(), "/", "_")
-					}
-					imports[name] = pkg.Path()
-					kind += name + "."
-				}
-			}
-			kind += obj.Obj().Name()
-		} else {
-			kind += v.Elem().String()
-		}
+		kind, _ := getElemType(v, x, imports)
 
 		fmt.Fprintf(w, `if %s != nil {
 	%s = new(%s)
@@ -245,6 +206,43 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		walkType(source, sink, x, v.Elem(), w, imports)
 
 		fmt.Fprintf(w, "}\n")
+	case *types.Chan:
+		kind, pointer := getElemType(v, x, imports)
+
+		if pointer {
+			kind = "*" + kind
+		}
+
+		fmt.Fprintf(w, `if %s != nil {
+	%s = make(chan %s, cap(%s))
+}
+`, source, sink, kind, source)
 	}
 
+}
+
+func getElemType(v Pointer, x string, imports map[string]string) (string, bool) {
+	obj := objFromType(v.Elem())
+	var name, kind string
+	if obj != nil {
+		pkg := obj.Obj().Pkg()
+		if pkg != nil {
+			name = pkg.Name()
+			if name == x {
+				name = ""
+			} else {
+				if path, ok := imports[name]; ok && path != pkg.Path() {
+					name = strings.ReplaceAll(pkg.Path(), "/", "_")
+				}
+				imports[name] = pkg.Path()
+				kind += name + "."
+			}
+		}
+		kind += obj.Obj().Name()
+	} else {
+		kind += v.Elem().String()
+	}
+
+	_, pointer := v.Elem().(*types.Pointer)
+	return kind, pointer
 }
