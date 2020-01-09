@@ -85,7 +85,7 @@ func (o %s%s) DeepCopy() %s%s {
 
 	sink := "o"
 	fmt.Fprintf(&buf, "cp = %s%s\n", ptr, sink)
-	walkType(sink, "cp", name, obj, &buf, imports, skips)
+	walkType(sink, "cp", name, obj, &buf, imports, skips, true)
 
 	if pointer {
 		buf.WriteString("return &cp\n}")
@@ -117,22 +117,27 @@ func generateFile(p *packages.Package, fn []byte, imports map[string]string) ([]
 
 	b, err := format.Source(file.Bytes())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error formatting source: %w\nsource:\n%s", err, string(file.Bytes()))
 	}
 
 	return b, nil
 }
 
-type Object interface {
+type object interface {
 	types.Type
 	Obj() *types.TypeName
 }
 
-type Pointer interface {
+type pointer interface {
 	Elem() types.Type
 }
 
-func locateType(x, sel string, p *packages.Package) (Object, error) {
+type methoder interface {
+	Method(i int) *types.Func
+	NumMethods() int
+}
+
+func locateType(x, sel string, p *packages.Package) (object, error) {
 	for _, t := range p.TypesInfo.Defs {
 		if t == nil {
 			continue
@@ -148,12 +153,17 @@ func locateType(x, sel string, p *packages.Package) (Object, error) {
 	return nil, errors.New("type not found")
 }
 
-func objFromType(typ types.Type) Object {
-	if pointer, ok := typ.(Pointer); ok {
-		typ = pointer.Elem()
+func reducePointer(typ types.Type) (types.Type, bool) {
+	if pointer, ok := typ.(pointer); ok {
+		return pointer.Elem(), true
 	}
+	return typ, false
+}
 
-	m, ok := typ.(Object)
+func objFromType(typ types.Type) object {
+	typ, _ = reducePointer(typ)
+
+	m, ok := typ.(object)
 	if !ok {
 		return nil
 	}
@@ -161,7 +171,7 @@ func objFromType(typ types.Type) Object {
 	return m
 }
 
-func exprFilter(t types.Type, sel string, x string) Object {
+func exprFilter(t types.Type, sel string, x string) object {
 	m := objFromType(t)
 	if m == nil {
 		return nil
@@ -175,7 +185,7 @@ func exprFilter(t types.Type, sel string, x string) Object {
 	return m
 }
 
-func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[string]string, skips map[string]struct{}) {
+func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[string]string, skips map[string]struct{}, initial bool) {
 	if m == nil {
 		return
 	}
@@ -186,6 +196,10 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		if v.Obj().Pkg() != nil && v.Obj().Pkg().Name() != x {
 			needExported = true
 		}
+	}
+
+	if v, ok := m.(methoder); ok && !initial && reuseDeepCopy(source, sink, v, false, w) {
+		return
 	}
 
 	under := m.Underlying()
@@ -202,7 +216,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			if _, ok := skips[sel]; ok {
 				continue
 			}
-			walkType(source+"."+fname, sink+"."+fname, x, field.Type(), w, imports, skips)
+			walkType(source+"."+fname, sink+"."+fname, x, field.Type(), w, imports, skips, false)
 		}
 	case *types.Slice:
 		kind, basic := getElemType(v.Elem(), x, imports, false)
@@ -219,19 +233,23 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	for i := range %s {
 `, source, sink, kind, source, source)
 
-			walkType(source+"[i]", sink+"[i]", x, v.Elem(), w, imports, skips)
+			walkType(source+"[i]", sink+"[i]", x, v.Elem(), w, imports, skips, false)
 
 			fmt.Fprintf(w, "}\n}\n")
 		}
 	case *types.Pointer:
 		kind, _ := getElemType(v.Elem(), x, imports, true)
 
-		fmt.Fprintf(w, `if %s != nil {
-	%s = new(%s)
-	*%s = *%s
-`, source, sink, kind, sink, source)
+		fmt.Fprintf(w, "if %s != nil {\n", source)
 
-		walkType(source, sink, x, v.Elem(), w, imports, skips)
+		if e, ok := v.Elem().(methoder); !ok || initial || !reuseDeepCopy(source, sink, e, true, w) {
+
+			fmt.Fprintf(w, `%s = new(%s)
+	*%s = *%s
+`, sink, kind, sink, source)
+
+			walkType(source, sink, x, v.Elem(), w, imports, skips, false)
+		}
 
 		fmt.Fprintf(w, "}\n")
 	case *types.Chan:
@@ -254,12 +272,12 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		if !kbasic {
 			ksink = "cpk"
 			fmt.Fprintf(w, "var %s %s\n", ksink, kkind)
-			walkType("k", ksink, x, v.Key(), w, imports, skips)
+			walkType("k", ksink, x, v.Key(), w, imports, skips, false)
 		}
 		if !vbasic {
 			vsink = "cpv"
 			fmt.Fprintf(w, "var %s %s\n", vsink, vkind)
-			walkType("v", vsink, x, v.Elem(), w, imports, skips)
+			walkType("v", vsink, x, v.Elem(), w, imports, skips, false)
 		}
 
 		fmt.Fprintf(w, "%s[%s] = %s", sink, ksink, vsink)
@@ -302,4 +320,48 @@ func getElemType(t types.Type, x string, imports map[string]string, rawkind bool
 	}
 
 	return kind, noncopy
+}
+
+func reuseDeepCopy(source, sink string, v methoder, pointer bool, w io.Writer) bool {
+	for i := 0; i < v.NumMethods(); i++ {
+		m := v.Method(i)
+		if m.Name() != "DeepCopy" {
+			continue
+		}
+
+		sig, ok := m.Type().(*types.Signature)
+		if !ok {
+			continue
+		}
+
+		if sig.Params().Len() != 0 || sig.Results().Len() != 1 {
+			continue
+		}
+
+		ret := sig.Results().At(0)
+		retType, retPointer := reducePointer(ret.Type())
+		sigType, _ := reducePointer(sig.Recv().Type())
+
+		if !types.Identical(retType, sigType) {
+			return false
+		}
+
+		if pointer == retPointer {
+			fmt.Fprintf(w, "%s = %s.DeepCopy()\n", sink, source)
+		} else if pointer {
+			fmt.Fprintf(w, `retV := %s.DeepCopy()
+	%s = &retV
+`, source, sink)
+		} else {
+			fmt.Fprintf(w, `{
+	retV := %s.DeepCopy()
+	%s = *retV
+}
+`, source, sink)
+		}
+
+		return true
+	}
+
+	return false
 }

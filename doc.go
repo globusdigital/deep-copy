@@ -2,7 +2,8 @@
 //
 // Given a package directory, and a type name that appears in that package, a
 // DeepCopy method will be generated, to create a deep copy of the type value.
-// Members of the type will also be copied deeply, recursively.
+// Members of the type will also be copied deeply, recursively. If a member T
+// of the type has a method "DeepCopy() [*]T", that method will be reused.
 //
 // To specify a pointer receiver for the method, an optional --pointer-receiver
 // boolean flag can be specified. The flag will also govern whether the return
