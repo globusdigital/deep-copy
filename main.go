@@ -18,7 +18,7 @@ import (
 var (
 	typeF            = flag.String("type", "", "the concrete type")
 	pointerReceiverF = flag.Bool("pointer-receiver", false, "the generated receiver type")
-	skipF            = flag.String("skip", "", "comma-separated field selectors to shallow copy")
+	skipF            = flag.String("skip", "", "comma-separated field/slice/map selectors to shallow copy")
 )
 
 func main() {
@@ -230,6 +230,15 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	case *types.Slice:
 		kind, basic := getElemType(v.Elem(), x, imports, false)
 
+		sel := sink + "[i]"
+		if initial {
+			sel = "[i]"
+		}
+		sel = sel[strings.Index(sel, ".")+1:]
+		if _, ok := skips[sel]; ok {
+			basic = true
+		}
+
 		if basic {
 			fmt.Fprintf(w, `if %s != nil {
 	%s = make([]%s, len(%s))
@@ -271,6 +280,15 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	case *types.Map:
 		kkind, kbasic := getElemType(v.Key(), x, imports, false)
 		vkind, vbasic := getElemType(v.Elem(), x, imports, false)
+
+		sel := sink + "[k]"
+		if initial {
+			sel = "[k]"
+		}
+		sel = sel[strings.Index(sel, ".")+1:]
+		if _, ok := skips[sel]; ok {
+			kbasic, vbasic = true, true
+		}
 
 		fmt.Fprintf(w, `if %s != nil {
 	%s = make(map[%s]%s, len(%s))

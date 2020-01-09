@@ -28,6 +28,8 @@ type Bar struct {
 
 Leaving the 'B' field as a shallow copy can be achieved by specifying `--skip
 B`. To skip deeply copying the inner 'I' field, one can specify `--skip B.I`.
+Slice and Map members can also be skipped, by adding `[i]` and `[k]`
+respectively.
 
 ## Usage
 

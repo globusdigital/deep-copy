@@ -15,3 +15,5 @@ type Baz struct {
 	String        string
 	StringPointer *string
 }
+
+type SlicePointer []*int
