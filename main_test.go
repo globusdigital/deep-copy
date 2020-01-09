@@ -23,17 +23,7 @@ func Test_generateFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			packages, err := load(tt.path)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			fn, imports, err := generateFunc(packages[0], tt.kind, tt.pointer, tt.skip)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			got, err := generateFile(packages[0], fn, imports)
+			got, err := run(tt.path, tt.kind, tt.skip, tt.pointer)
 			if err != nil {
 				t.Fatal(err)
 			}

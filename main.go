@@ -32,25 +32,34 @@ func main() {
 		log.Fatalln("No package path given")
 	}
 
-	packages, err := load(flag.Args()[0])
+	b, err := run(flag.Args()[0], *typeF, *skipF, *pointerReceiverF)
 	if err != nil {
-		log.Fatalln("Error loading packages", err)
-	}
-	if len(packages) == 0 {
-		log.Fatalln("No package found")
+		log.Fatalln("Error generating deep copy method:", err)
 	}
 
-	fn, imports, err := generateFunc(packages[0], *typeF, *pointerReceiverF, *skipF)
+	os.Stdout.Write(b)
+}
+
+func run(path, kind, skip string, pointer bool) ([]byte, error) {
+	packages, err := load(path)
 	if err != nil {
-		log.Fatalln("Error generating method:", err)
+		return nil, fmt.Errorf("loading package: %v", err)
+	}
+	if len(packages) == 0 {
+		return nil, errors.New("no package found")
+	}
+
+	fn, imports, err := generateFunc(packages[0], kind, pointer, skip)
+	if err != nil {
+		return nil, fmt.Errorf("generating method: %v", err)
 	}
 
 	b, err := generateFile(packages[0], fn, imports)
 	if err != nil {
-		log.Fatalln("Error generating file content:", err)
+		return nil, fmt.Errorf("generating file content: %v", err)
 	}
 
-	os.Stdout.Write(b)
+	return b, nil
 }
 
 func load(patterns string) ([]*packages.Package, error) {
