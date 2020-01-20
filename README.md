@@ -38,7 +38,7 @@ respectively.
 ## Usage
 
 ```bash
-deep-copy [--pointer-receiver] [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]] --type Type1 --type Type2 /path/to/package/containing/type
+deep-copy [-o /output/path.go] [--pointer-receiver] [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]] --type Type1 --type Type2 /path/to/package/containing/type
 ```
 
 ## Example

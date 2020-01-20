@@ -18,8 +18,9 @@ import (
 var (
 	pointerReceiverF = flag.Bool("pointer-receiver", false, "the generated receiver type")
 
-	typesF typesVal
-	skipsF skipsVal
+	typesF  typesVal
+	skipsF  skipsVal
+	outputF outputVal
 )
 
 type typesVal []string
@@ -60,9 +61,37 @@ func (f *skipsVal) Set(v string) error {
 	return nil
 }
 
+type outputVal struct {
+	io.WriteCloser
+	name string
+}
+
+func (f *outputVal) String() string {
+	return f.name
+}
+
+func (f *outputVal) Set(v string) error {
+	if v == "-" || v == "" {
+		f.WriteCloser = os.Stdout
+		f.name = "stdout"
+		return nil
+	}
+
+	file, err := os.Create(v)
+	if err != nil {
+		return fmt.Errorf("opening file: %v", v)
+	}
+
+	f.name = v
+	f.WriteCloser = file
+
+	return nil
+}
+
 func init() {
 	flag.Var(&typesF, "type", "the concrete type. Multiple flags can be specified")
 	flag.Var(&skipsF, "skip", "comma-separated field/slice/map selectors to shallow copy. Multiple flags can be specified")
+	flag.Var(&outputF, "o", "the output file to write to. Defaults to STDOUT")
 }
 
 func main() {
@@ -81,7 +110,15 @@ func main() {
 		log.Fatalln("Error generating deep copy method:", err)
 	}
 
-	os.Stdout.Write(b)
+	if outputF.WriteCloser == nil {
+		if err := outputF.Set("-"); err != nil {
+			log.Fatalln("Error initializing output file:", err)
+		}
+	}
+	if _, err := outputF.Write(b); err != nil {
+		log.Fatalln("Error writing result to file:", err)
+	}
+	outputF.Close()
 }
 
 func run(path string, types typesVal, skips skipsVal, pointer bool) ([]byte, error) {
