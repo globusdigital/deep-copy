@@ -216,7 +216,7 @@ func generateFile(p *packages.Package, imports map[string]string, fn [][]byte) (
 
 	b, err := format.Source(file.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("error formatting source: %w\nsource:\n%s", err, string(file.Bytes()))
+		return nil, fmt.Errorf("error formatting source: %w\nsource:\n%s", err, file.String())
 	}
 
 	return b, nil
