@@ -57,6 +57,8 @@ jobs:
 
     # Codecov
     - name: Codecov
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
         cp overalls.coverprofile coverage.txt
         bash <(curl -s https://codecov.io/bash)
