@@ -57,7 +57,9 @@ jobs:
 
     # Codecov
     - name: Codecov
-      run: go test -race -covermode atomic -coverprofile coverage.txt
+      run: |
+        cp overalls.coverprofile coverage.txt
+        bash <(curl -s https://codecov.io/bash)
 
     # LINT
 
