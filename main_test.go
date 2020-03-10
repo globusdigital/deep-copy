@@ -54,8 +54,7 @@ package testdata
 
 // DeepCopy generates a deep copy of Foo
 func (o Foo) DeepCopy() Foo {
-	var cp Foo
-	cp = o
+	var cp Foo = o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
@@ -86,8 +85,7 @@ package testdata
 
 // DeepCopy generates a deep copy of *Foo
 func (o *Foo) DeepCopy() *Foo {
-	var cp Foo
-	cp = *o
+	var cp Foo = *o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
@@ -118,8 +116,7 @@ package testdata
 
 // DeepCopy generates a deep copy of *Foo
 func (o *Foo) DeepCopy() *Foo {
-	var cp Foo
-	cp = *o
+	var cp Foo = *o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
@@ -146,8 +143,7 @@ package testdata
 
 // DeepCopy generates a deep copy of Foo
 func (o Foo) DeepCopy() Foo {
-	var cp Foo
-	cp = o
+	var cp Foo = o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
@@ -169,8 +165,7 @@ package testdata
 
 // DeepCopy generates a deep copy of Alpha
 func (o Alpha) DeepCopy() Alpha {
-	var cp Alpha
-	cp = o
+	var cp Alpha = o
 	if o.B != nil {
 		cp.B = o.B.DeepCopy()
 	}
@@ -191,8 +186,7 @@ package testdata
 
 // DeepCopy generates a deep copy of SlicePointer
 func (o SlicePointer) DeepCopy() SlicePointer {
-	var cp SlicePointer
-	cp = o
+	var cp SlicePointer = o
 	if o != nil {
 		cp = make([]*int, len(o))
 		copy(cp, o)
@@ -205,8 +199,7 @@ package testdata
 
 // DeepCopy generates a deep copy of Foo
 func (o Foo) DeepCopy() Foo {
-	var cp Foo
-	cp = o
+	var cp Foo = o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
@@ -222,8 +215,7 @@ func (o Foo) DeepCopy() Foo {
 
 // DeepCopy generates a deep copy of Alpha
 func (o Alpha) DeepCopy() Alpha {
-	var cp Alpha
-	cp = o
+	var cp Alpha = o
 	if o.B != nil {
 		cp.B = o.B.DeepCopy()
 	}
@@ -237,8 +229,7 @@ package testdata
 
 // DeepCopy generates a deep copy of *I3WithSlice
 func (o *I3WithSlice) DeepCopy() *I3WithSlice {
-	var cp I3WithSlice
-	cp = *o
+	var cp I3WithSlice = *o
 	if o.a != nil {
 		cp.a = make([]I3SimpleStruct, len(o.a))
 		copy(cp.a, o.a)
@@ -251,8 +242,7 @@ package testdata
 
 // DeepCopy generates a deep copy of *I3WithMap
 func (o *I3WithMap) DeepCopy() *I3WithMap {
-	var cp I3WithMap
-	cp = *o
+	var cp I3WithMap = *o
 	if o.a != nil {
 		cp.a = make(map[I3SimpleStruct]string, len(o.a))
 		for k, v := range o.a {
@@ -267,8 +257,7 @@ package testdata
 
 // DeepCopy generates a deep copy of I3WithMapVal
 func (o I3WithMapVal) DeepCopy() I3WithMapVal {
-	var cp I3WithMapVal
-	cp = o
+	var cp I3WithMapVal = o
 	if o.a != nil {
 		cp.a = make(map[string]I3SimpleStruct, len(o.a))
 		for k, v := range o.a {

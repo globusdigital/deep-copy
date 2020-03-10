@@ -168,10 +168,12 @@ func generateFunc(p *packages.Package, kind string, imports map[string]string, s
 	if pointer {
 		ptr = "*"
 	}
+
+	sink := "o"
 	fmt.Fprintf(&buf, `// DeepCopy generates a deep copy of %s%s
 func (o %s%s) DeepCopy() %s%s {
-	var cp %s
-`, ptr, kind, ptr, kind, ptr, kind, kind)
+	var cp %s = %s%s
+`, ptr, kind, ptr, kind, ptr, kind, kind, ptr, sink)
 
 	name := p.Name
 	obj, err := locateType(name, kind, p)
@@ -179,8 +181,6 @@ func (o %s%s) DeepCopy() %s%s {
 		return nil, err
 	}
 
-	sink := "o"
-	fmt.Fprintf(&buf, "cp = %s%s\n", ptr, sink)
 	walkType(sink, "cp", name, obj, &buf, imports, skips, true)
 
 	if pointer {
