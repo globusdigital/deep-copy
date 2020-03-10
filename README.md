@@ -47,8 +47,22 @@ respectively.
 
 ## Usage
 
+Pass either path to the folder containing the types or the module name:
+
 ```bash
-deep-copy [-o /output/path.go] [--pointer-receiver] [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]] --type Type1 --type Type2 /path/to/package/containing/type
+deep-copy <flags> /path/to/package/containing/type
+deep-copy <flags> github.com/globusdigital/deep-copy
+deep-copy <flags> github.com/globusdigital/deep-copy/some/sub/packages
+```
+Here is the full set of flags supported:
+
+```bash
+deep-copy \ 
+  [-o /output/path.go] \
+  [--pointer-receiver] \
+  [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]] 
+  [--type Type1 --type Type2\ \ 
+  /path/to/package/containing/type
 ```
 
 ## Example
