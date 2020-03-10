@@ -54,7 +54,7 @@ deep-copy <flags> /path/to/package/containing/type
 deep-copy <flags> github.com/globusdigital/deep-copy
 deep-copy <flags> github.com/globusdigital/deep-copy/some/sub/packages
 ```
-Here is the full set of flags supported:
+Here is the full set of supported flags:
 
 ```bash
 deep-copy \ 
