@@ -318,7 +318,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			walkType(source+"."+fname, sink+"."+fname, x, field.Type(), w, imports, skips, false)
 		}
 	case *types.Slice:
-		kind, _ := getElemType(v.Elem(), x, imports, false)
+		kind := getElemType(v.Elem(), x, imports, false)
 
 		sel := sink + "[i]"
 		if initial {
@@ -355,7 +355,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 
 		fmt.Fprintf(w, "}\n")
 	case *types.Pointer:
-		kind, _ := getElemType(v.Elem(), x, imports, true)
+		kind := getElemType(v.Elem(), x, imports, true)
 
 		fmt.Fprintf(w, "if %s != nil {\n", source)
 
@@ -370,23 +370,25 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 
 		fmt.Fprintf(w, "}\n")
 	case *types.Chan:
-		kind, _ := getElemType(v.Elem(), x, imports, false)
+		kind := getElemType(v.Elem(), x, imports, false)
 
 		fmt.Fprintf(w, `if %s != nil {
 	%s = make(chan %s, cap(%s))
 }
 `, source, sink, kind, source)
 	case *types.Map:
-		kkind, kbasic := getElemType(v.Key(), x, imports, false)
-		vkind, vbasic := getElemType(v.Elem(), x, imports, false)
+		kkind := getElemType(v.Key(), x, imports, false)
+		vkind := getElemType(v.Elem(), x, imports, false)
 
 		sel := sink + "[k]"
 		if initial {
 			sel = "[k]"
 		}
+
+		var skipKey, skipValue bool
 		sel = sel[strings.Index(sel, ".")+1:]
 		if _, ok := skips[sel]; ok {
-			kbasic, vbasic = true, true
+			skipKey, skipValue = true, true
 		}
 
 		fmt.Fprintf(w, `if %s != nil {
@@ -395,15 +397,31 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 `, source, sink, kkind, vkind, source, source)
 
 		ksink, vsink := "k", "v"
-		if !kbasic {
-			ksink = "cpk"
-			fmt.Fprintf(w, "var %s %s\n", ksink, kkind)
-			walkType("k", ksink, x, v.Key(), w, imports, skips, false)
+
+		var b bytes.Buffer
+
+		if !skipKey {
+			copyKSink := "cpk"
+			walkType("k", copyKSink, x, v.Key(), &b, imports, skips, false)
+
+			if b.Len() > 0 {
+				ksink = copyKSink
+				fmt.Fprintf(w, "var %s %s\n", ksink, kkind)
+				b.WriteTo(w)
+			}
 		}
-		if !vbasic {
-			vsink = "cpv"
-			fmt.Fprintf(w, "var %s %s\n", vsink, vkind)
-			walkType("v", vsink, x, v.Elem(), w, imports, skips, false)
+
+		b.Reset()
+
+		if !skipValue {
+			copyVSink := "cpv"
+			walkType("v", copyVSink, x, v.Elem(), &b, imports, skips, false)
+
+			if b.Len() > 0 {
+				vsink = copyVSink
+				fmt.Fprintf(w, "var %s %s\n", vsink, vkind)
+				b.WriteTo(w)
+			}
 		}
 
 		fmt.Fprintf(w, "%s[%s] = %s", sink, ksink, vsink)
@@ -413,7 +431,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 
 }
 
-func getElemType(t types.Type, x string, imports map[string]string, rawkind bool) (string, bool) {
+func getElemType(t types.Type, x string, imports map[string]string, rawkind bool) string {
 	obj := objFromType(t)
 	var name, kind string
 	if obj != nil {
@@ -433,19 +451,13 @@ func getElemType(t types.Type, x string, imports map[string]string, rawkind bool
 		kind += t.String()
 	}
 
-	var pointer, noncopy bool
-	switch t.(type) {
-	case *types.Pointer:
-		pointer = true
-	case *types.Basic, *types.Interface:
-		noncopy = true
-	}
+	_, pointer := t.(*types.Pointer)
 
 	if !rawkind && pointer && kind[0] != '*' {
 		kind = "*" + kind
 	}
 
-	return kind, noncopy
+	return kind
 }
 
 func reuseDeepCopy(source, sink string, v methoder, pointer bool, w io.Writer) bool {
