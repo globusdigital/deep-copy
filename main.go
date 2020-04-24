@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -77,15 +78,45 @@ func (f *outputVal) Set(v string) error {
 		return nil
 	}
 
-	file, err := os.Create(v)
-	if err != nil {
-		return fmt.Errorf("opening file: %v", v)
+	// We don't want to create the file right now because, if it is in the same module as the target type,
+	// it will interfere with "packages.Load" and it might cause the code generation to fail (go version <= 1.13).
+	// However, we still want to check that we *CAN* create it.
+	_, err := os.Stat(v)
+	if os.IsNotExist(err) {
+		file, err := os.Create(v)
+		if err != nil {
+			return fmt.Errorf("opening file: %v", v)
+		}
+		_ = file.Close()
+		_ = os.Remove(v)
+	} else {
+		// "Touch" the file, which checks the write permission.
+		currentTime := time.Now().Local()
+		err = os.Chtimes(v, currentTime, currentTime)
+		if err != nil {
+			return fmt.Errorf("opening file: %v", v)
+		}
 	}
 
 	f.name = v
-	f.WriteCloser = file
-
 	return nil
+}
+
+func (f *outputVal) Open() (io.WriteCloser, error) {
+	if f.WriteCloser == nil {
+		if f.name == "" {
+			f.WriteCloser = os.Stdout
+		} else {
+			file, err := os.Create(f.name)
+			if err != nil {
+				return nil, fmt.Errorf("opening file: %v", f.name)
+			}
+
+			f.WriteCloser = file
+		}
+	}
+
+	return f.WriteCloser, nil
 }
 
 func init() {
@@ -110,15 +141,14 @@ func main() {
 		log.Fatalln("Error generating deep copy method:", err)
 	}
 
-	if outputF.WriteCloser == nil {
-		if err := outputF.Set("-"); err != nil {
-			log.Fatalln("Error initializing output file:", err)
-		}
+	output, err := outputF.Open()
+	if err != nil {
+		log.Fatalln("Error initializing output file:", err)
 	}
-	if _, err := outputF.Write(b); err != nil {
+	if _, err := output.Write(b); err != nil {
 		log.Fatalln("Error writing result to file:", err)
 	}
-	outputF.Close()
+	output.Close()
 }
 
 func run(path string, types typesVal, skips skipsVal, pointer bool) ([]byte, error) {
