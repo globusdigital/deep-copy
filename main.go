@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"go/format"
 	"go/types"
+	"golang.org/x/tools/go/packages"
 	"io"
 	"log"
 	"os"
 	"strings"
-	"time"
-
-	"golang.org/x/tools/go/packages"
 )
 
 var (
@@ -63,7 +61,7 @@ func (f *skipsVal) Set(v string) error {
 }
 
 type outputVal struct {
-	io.WriteCloser
+	file *os.File
 	name string
 }
 
@@ -73,50 +71,38 @@ func (f *outputVal) String() string {
 
 func (f *outputVal) Set(v string) error {
 	if v == "-" || v == "" {
-		f.WriteCloser = os.Stdout
 		f.name = "stdout"
+
+		if f.file != nil {
+			_ = f.file.Close()
+		}
+		f.file = nil
+
 		return nil
 	}
 
-	// We don't want to create the file right now because, if it is in the same module as the target type,
-	// it will interfere with "packages.Load" and it might cause the code generation to fail (go version <= 1.13).
-	// However, we still want to check that we *CAN* create it.
-	_, err := os.Stat(v)
-	if os.IsNotExist(err) {
-		file, err := os.Create(v)
-		if err != nil {
-			return fmt.Errorf("opening file: %v", v)
-		}
-		_ = file.Close()
-		_ = os.Remove(v)
-	} else {
-		// "Touch" the file, which checks the write permission.
-		currentTime := time.Now().Local()
-		err = os.Chtimes(v, currentTime, currentTime)
-		if err != nil {
-			return fmt.Errorf("opening file: %v", v)
-		}
+	file, err := os.OpenFile(v, os.O_RDWR | os.O_CREATE, 0666)
+	if err != nil {
+		return fmt.Errorf("opening file: %v", v)
 	}
 
 	f.name = v
+	f.file = file
+
 	return nil
 }
 
 func (f *outputVal) Open() (io.WriteCloser, error) {
-	if f.WriteCloser == nil {
-		if f.name == "" {
-			f.WriteCloser = os.Stdout
-		} else {
-			file, err := os.Create(f.name)
-			if err != nil {
-				return nil, fmt.Errorf("opening file: %v", f.name)
-			}
-
-			f.WriteCloser = file
+	if f.file == nil {
+		f.file = os.Stdout
+	} else {
+		err := f.file.Truncate(0)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	return f.WriteCloser, nil
+	return f.file, nil
 }
 
 func init() {
