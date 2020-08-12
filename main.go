@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"go/format"
 	"go/types"
-	"golang.org/x/tools/go/packages"
 	"io"
 	"log"
 	"os"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 )
 
 var (
@@ -81,7 +82,7 @@ func (f *outputVal) Set(v string) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(v, os.O_RDWR | os.O_CREATE, 0666)
+	file, err := os.OpenFile(v, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return fmt.Errorf("opening file: %v", v)
 	}
@@ -185,11 +186,11 @@ func generateFunc(p *packages.Package, kind string, imports map[string]string, s
 		ptr = "*"
 	}
 
-	sink := "o"
+	source := "o"
 	fmt.Fprintf(&buf, `// DeepCopy generates a deep copy of %s%s
 func (o %s%s) DeepCopy() %s%s {
 	var cp %s = %s%s
-`, ptr, kind, ptr, kind, ptr, kind, kind, ptr, sink)
+`, ptr, kind, ptr, kind, ptr, kind, kind, ptr, source)
 
 	name := p.Name
 	obj, err := locateType(name, kind, p)
@@ -197,7 +198,7 @@ func (o %s%s) DeepCopy() %s%s {
 		return nil, err
 	}
 
-	walkType(sink, "cp", name, obj, &buf, imports, skips, true)
+	walkType(source, "cp", name, obj, &buf, imports, skips, true)
 
 	if pointer {
 		buf.WriteString("return &cp\n}")
@@ -417,7 +418,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		var b bytes.Buffer
 
 		if !skipKey {
-			copyKSink := "cpk"
+			copyKSink := selToIdent(sink) + "_k"
 			walkType("k", copyKSink, x, v.Key(), &b, imports, skips, false)
 
 			if b.Len() > 0 {
@@ -430,7 +431,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		b.Reset()
 
 		if !skipValue {
-			copyVSink := "cpv"
+			copyVSink := selToIdent(sink) + "_v"
 			walkType("v", copyVSink, x, v.Elem(), &b, imports, skips, false)
 
 			if b.Len() > 0 {
@@ -518,4 +519,17 @@ func reuseDeepCopy(source, sink string, v methoder, pointer bool, w io.Writer) b
 	}
 
 	return false
+}
+
+func selToIdent(sel string) string {
+	sel = strings.ReplaceAll(sel, "]", "")
+
+	return strings.Map(func(r rune) rune {
+		switch r {
+		case '[', '.':
+			return '_'
+		default:
+			return r
+		}
+	}, sel)
 }

@@ -4,21 +4,20 @@ package testdata
 
 // DeepCopy generates a deep copy of Foo
 func (o Foo) DeepCopy() Foo {
-	var cp Foo
-	cp = o
+	var cp Foo = o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k, v := range o.Map {
-			var cpv *Bar
+			var cp_Map_v *Bar
 			if v != nil {
-				cpv = new(Bar)
-				*cpv = *v
+				cp_Map_v = new(Bar)
+				*cp_Map_v = *v
 				if v.Slice != nil {
-					cpv.Slice = make([]string, len(v.Slice))
-					copy(cpv.Slice, v.Slice)
+					cp_Map_v.Slice = make([]string, len(v.Slice))
+					copy(cp_Map_v.Slice, v.Slice)
 				}
 			}
-			cp.Map[k] = cpv
+			cp.Map[k] = cp_Map_v
 		}
 	}
 	if o.ch != nil {
