@@ -377,11 +377,10 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 
 		fmt.Fprintf(w, "}\n")
 	case *types.Pointer:
-		kind := getElemType(v.Elem(), x, imports, true)
-
 		fmt.Fprintf(w, "if %s != nil {\n", source)
 
 		if e, ok := v.Elem().(methoder); !ok || initial || !reuseDeepCopy(source, sink, e, true, generating, w) {
+			kind := getElemType(v.Elem(), x, imports, true)
 
 			fmt.Fprintf(w, `%s = new(%s)
 	*%s = *%s
