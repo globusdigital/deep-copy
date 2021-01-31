@@ -12,9 +12,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
     - name: Export GOPATH
-      run: echo "::set-env name=GOPATH::$(go env GOPATH)"
+      run: echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
     - name: Append GOPATH onto PATH
-      run: echo "::set-env name=PATH::$PATH:$GOPATH/bin"
+      run: echo "$GOPATH/bin" >> $GITHUB_PATH
 
 
     # BUILD
