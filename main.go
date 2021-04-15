@@ -357,16 +357,16 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	%s = make([]%s, len(%s))
 `, source, sink, kind, source)
 
+		fmt.Fprintf(w, `copy(%s, %s)
+`, sink, source)
+
 		var b bytes.Buffer
 
 		if !skipSlice {
 			walkType(source+"[i]", sink+"[i]", x, v.Elem(), &b, imports, skips, generating, false)
 		}
 
-		if b.Len() == 0 {
-			fmt.Fprintf(w, `copy(%s, %s)
-`, sink, source)
-		} else {
+		if b.Len() > 0 {
 			fmt.Fprintf(w, `    for i := range %s {
 `, source)
 
