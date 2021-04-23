@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -34,7 +35,7 @@ func (f *typesVal) Set(v string) error {
 	return nil
 }
 
-type skipsVal []map[string]struct{}
+type skipsVal []skips
 
 func (f *skipsVal) String() string {
 	parts := make([]string, 0, len(*f))
@@ -59,6 +60,16 @@ func (f *skipsVal) Set(v string) error {
 	*f = append(*f, set)
 
 	return nil
+}
+
+type skips map[string]struct{}
+
+func (s skips) Contains(sel string) bool {
+	if _, ok := s[sel]; ok {
+		return ok
+	}
+
+	return false
 }
 
 type outputVal struct {
@@ -202,7 +213,7 @@ func (o %s%s) DeepCopy() %s%s {
 	var cp %s = %s%s
 `, ptr, kind, ptr, kind, ptr, kind, kind, ptr, source)
 
-	walkType(source, "cp", p.Name, obj, &buf, imports, skips, generating, true)
+	walkType(source, "cp", p.Name, obj, &buf, imports, skips, generating, 0)
 
 	if pointer {
 		buf.WriteString("return &cp\n}")
@@ -306,7 +317,8 @@ func exprFilter(t types.Type, sel string, x string) object {
 	return m
 }
 
-func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[string]string, skips map[string]struct{}, generating []object, initial bool) {
+func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[string]string, skips skips, generating []object, depth int) {
+	initial := depth == 0
 	if m == nil {
 		return
 	}
@@ -323,6 +335,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		return
 	}
 
+	depth++
 	under := m.Underlying()
 	switch v := under.(type) {
 	case *types.Struct:
@@ -337,19 +350,25 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			if _, ok := skips[sel]; ok {
 				continue
 			}
-			walkType(source+"."+fname, sink+"."+fname, x, field.Type(), w, imports, skips, generating, false)
+			walkType(source+"."+fname, sink+"."+fname, x, field.Type(), w, imports, skips, generating, depth)
 		}
 	case *types.Slice:
 		kind := getElemType(v.Elem(), x, imports, false)
 
-		sel := sink + "[i]"
-		if initial {
-			sel = "[i]"
+		idx := "i"
+		if depth > 1 {
+			idx += strconv.Itoa(depth)
+		}
+
+		// sel is only used for skips
+		sel := "[i]"
+		sel = sel[strings.Index(sel, ".")+1:]
+		if !initial {
+			sel = sink + sel
 		}
 
 		var skipSlice bool
-		sel = sel[strings.Index(sel, ".")+1:]
-		if _, ok := skips[sel]; ok {
+		if skips.Contains(sel) {
 			skipSlice = true
 		}
 
@@ -363,12 +382,13 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		var b bytes.Buffer
 
 		if !skipSlice {
-			walkType(source+"[i]", sink+"[i]", x, v.Elem(), &b, imports, skips, generating, false)
+			baseSel := "[" + idx + "]"
+			walkType(source+baseSel, sink+baseSel, x, v.Elem(), &b, imports, skips, generating, depth)
 		}
 
 		if b.Len() > 0 {
-			fmt.Fprintf(w, `    for i := range %s {
-`, source)
+			fmt.Fprintf(w, `    for %s := range %s {
+`, idx, source)
 
 			b.WriteTo(w)
 
@@ -386,7 +406,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	*%s = *%s
 `, sink, kind, sink, source)
 
-			walkType(source, sink, x, v.Elem(), w, imports, skips, generating, false)
+			walkType(source, sink, x, v.Elem(), w, imports, skips, generating, depth)
 		}
 
 		fmt.Fprintf(w, "}\n")
@@ -401,29 +421,37 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		kkind := getElemType(v.Key(), x, imports, false)
 		vkind := getElemType(v.Elem(), x, imports, false)
 
-		sel := sink + "[k]"
-		if initial {
-			sel = "[k]"
+		key, val := "k", "v"
+
+		if depth > 1 {
+			key += strconv.Itoa(depth)
+			val += strconv.Itoa(depth)
 		}
 
-		var skipKey, skipValue bool
+		// Sel is only used for skips
+		sel := "[k]"
+		if !initial {
+			sel = sink + sel
+		}
 		sel = sel[strings.Index(sel, ".")+1:]
-		if _, ok := skips[sel]; ok {
+
+		var skipKey, skipValue bool
+		if skips.Contains(sel) {
 			skipKey, skipValue = true, true
 		}
 
 		fmt.Fprintf(w, `if %s != nil {
 	%s = make(map[%s]%s, len(%s))
-	for k, v := range %s {
-`, source, sink, kkind, vkind, source, source)
+	for %s, %s := range %s {
+`, source, sink, kkind, vkind, source, key, val, source)
 
-		ksink, vsink := "k", "v"
+		ksink, vsink := key, val
 
 		var b bytes.Buffer
 
 		if !skipKey {
-			copyKSink := selToIdent(sink) + "_k"
-			walkType("k", copyKSink, x, v.Key(), &b, imports, skips, generating, false)
+			copyKSink := selToIdent(sink) + "_" + key
+			walkType(key, copyKSink, x, v.Key(), &b, imports, skips, generating, depth)
 
 			if b.Len() > 0 {
 				ksink = copyKSink
@@ -435,8 +463,8 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 		b.Reset()
 
 		if !skipValue {
-			copyVSink := selToIdent(sink) + "_v"
-			walkType("v", copyVSink, x, v.Elem(), &b, imports, skips, generating, false)
+			copyVSink := selToIdent(sink) + "_" + val
+			walkType(val, copyVSink, x, v.Elem(), &b, imports, skips, generating, depth)
 
 			if b.Len() > 0 {
 				vsink = copyVSink
