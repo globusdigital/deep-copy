@@ -2,9 +2,10 @@ package main
 
 import (
 	"bytes"
-	"reflect"
 	"regexp"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func Test_run(t *testing.T) {
@@ -30,6 +31,7 @@ func Test_run(t *testing.T) {
 		{name: "issue 7, shadowed map vars 2", types: typesVal{"SomeStruct", "SomeStruct2"}, path: "./testdata", want: []byte(Issue7ShadowedMapVars2)},
 		{name: "pointer that implements DeepCopy", types: typesVal{"SomeStruct"}, path: "./testdata/pointer_that_implements_deepcopy/somepkg", want: []byte(PointerThatImplementsDeepcopy)},
 		{name: "issue 10, slice with element that contains pointer and value", types: typesVal{"StructCH"}, path: "./testdata", want: []byte(Issue10StructCH)},
+		{name: "issue 12, nested slices", types: typesVal{"I12NestedSlices"}, path: "./testdata", want: []byte(Issue12NestedSlices)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -38,8 +40,8 @@ func Test_run(t *testing.T) {
 				t.Fatal(err)
 			}
 			got = normalizeComment(got)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("generateFile() = %s, want %s", string(got), string(tt.want))
+			if diff := cmp.Diff(got, tt.want); diff != "" {
+				t.Errorf("generateFile() diff = %s", diff)
 			}
 		})
 	}
@@ -61,17 +63,17 @@ func (o Foo) DeepCopy() Foo {
 	var cp Foo = o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
-		for k, v := range o.Map {
-			var cp_Map_v *Bar
-			if v != nil {
-				cp_Map_v = new(Bar)
-				*cp_Map_v = *v
-				if v.Slice != nil {
-					cp_Map_v.Slice = make([]string, len(v.Slice))
-					copy(cp_Map_v.Slice, v.Slice)
+		for k2, v2 := range o.Map {
+			var cp_Map_v2 *Bar
+			if v2 != nil {
+				cp_Map_v2 = new(Bar)
+				*cp_Map_v2 = *v2
+				if v2.Slice != nil {
+					cp_Map_v2.Slice = make([]string, len(v2.Slice))
+					copy(cp_Map_v2.Slice, v2.Slice)
 				}
 			}
-			cp.Map[k] = cp_Map_v
+			cp.Map[k2] = cp_Map_v2
 		}
 	}
 	if o.ch != nil {
@@ -92,17 +94,17 @@ func (o *Foo) DeepCopy() *Foo {
 	var cp Foo = *o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
-		for k, v := range o.Map {
-			var cp_Map_v *Bar
-			if v != nil {
-				cp_Map_v = new(Bar)
-				*cp_Map_v = *v
-				if v.Slice != nil {
-					cp_Map_v.Slice = make([]string, len(v.Slice))
-					copy(cp_Map_v.Slice, v.Slice)
+		for k2, v2 := range o.Map {
+			var cp_Map_v2 *Bar
+			if v2 != nil {
+				cp_Map_v2 = new(Bar)
+				*cp_Map_v2 = *v2
+				if v2.Slice != nil {
+					cp_Map_v2.Slice = make([]string, len(v2.Slice))
+					copy(cp_Map_v2.Slice, v2.Slice)
 				}
 			}
-			cp.Map[k] = cp_Map_v
+			cp.Map[k2] = cp_Map_v2
 		}
 	}
 	if o.ch != nil {
@@ -123,13 +125,13 @@ func (o *Foo) DeepCopy() *Foo {
 	var cp Foo = *o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
-		for k, v := range o.Map {
-			var cp_Map_v *Bar
-			if v != nil {
-				cp_Map_v = new(Bar)
-				*cp_Map_v = *v
+		for k2, v2 := range o.Map {
+			var cp_Map_v2 *Bar
+			if v2 != nil {
+				cp_Map_v2 = new(Bar)
+				*cp_Map_v2 = *v2
 			}
-			cp.Map[k] = cp_Map_v
+			cp.Map[k2] = cp_Map_v2
 		}
 	}
 	if o.ch != nil {
@@ -150,8 +152,8 @@ func (o Foo) DeepCopy() Foo {
 	var cp Foo = o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
-		for k, v := range o.Map {
-			cp.Map[k] = v
+		for k2, v2 := range o.Map {
+			cp.Map[k2] = v2
 		}
 	}
 	if o.ch != nil {
@@ -206,8 +208,8 @@ func (o Foo) DeepCopy() Foo {
 	var cp Foo = o
 	if o.Map != nil {
 		cp.Map = make(map[string]*Bar, len(o.Map))
-		for k, v := range o.Map {
-			cp.Map[k] = v
+		for k2, v2 := range o.Map {
+			cp.Map[k2] = v2
 		}
 	}
 	if o.baz.StringPointer != nil {
@@ -249,8 +251,8 @@ func (o *I3WithMap) DeepCopy() *I3WithMap {
 	var cp I3WithMap = *o
 	if o.a != nil {
 		cp.a = make(map[I3SimpleStruct]string, len(o.a))
-		for k, v := range o.a {
-			cp.a[k] = v
+		for k2, v2 := range o.a {
+			cp.a[k2] = v2
 		}
 	}
 	return &cp
@@ -264,8 +266,8 @@ func (o I3WithMapVal) DeepCopy() I3WithMapVal {
 	var cp I3WithMapVal = o
 	if o.a != nil {
 		cp.a = make(map[string]I3SimpleStruct, len(o.a))
-		for k, v := range o.a {
-			cp.a[k] = v
+		for k2, v2 := range o.a {
+			cp.a[k2] = v2
 		}
 	}
 	return cp
@@ -280,20 +282,20 @@ func (o SomeStruct2) DeepCopy() SomeStruct2 {
 	var cp SomeStruct2 = o
 	if o.mapStruct != nil {
 		cp.mapStruct = make(map[string]SomeStruct, len(o.mapStruct))
-		for k, v := range o.mapStruct {
-			var cp_mapStruct_v SomeStruct
-			if v.mapSlice != nil {
-				cp_mapStruct_v.mapSlice = make(map[string][]string, len(v.mapSlice))
-				for k, v := range v.mapSlice {
-					var cp_mapStruct_v_mapSlice_v []string
-					if v != nil {
-						cp_mapStruct_v_mapSlice_v = make([]string, len(v))
-						copy(cp_mapStruct_v_mapSlice_v, v)
+		for k2, v2 := range o.mapStruct {
+			var cp_mapStruct_v2 SomeStruct
+			if v2.mapSlice != nil {
+				cp_mapStruct_v2.mapSlice = make(map[string][]string, len(v2.mapSlice))
+				for k4, v4 := range v2.mapSlice {
+					var cp_mapStruct_v2_mapSlice_v4 []string
+					if v4 != nil {
+						cp_mapStruct_v2_mapSlice_v4 = make([]string, len(v4))
+						copy(cp_mapStruct_v2_mapSlice_v4, v4)
 					}
-					cp_mapStruct_v.mapSlice[k] = cp_mapStruct_v_mapSlice_v
+					cp_mapStruct_v2.mapSlice[k4] = cp_mapStruct_v2_mapSlice_v4
 				}
 			}
-			cp.mapStruct[k] = cp_mapStruct_v
+			cp.mapStruct[k2] = cp_mapStruct_v2
 		}
 	}
 	return cp
@@ -308,13 +310,13 @@ func (o SomeStruct) DeepCopy() SomeStruct {
 	var cp SomeStruct = o
 	if o.mapSlice != nil {
 		cp.mapSlice = make(map[string][]string, len(o.mapSlice))
-		for k, v := range o.mapSlice {
-			var cp_mapSlice_v []string
-			if v != nil {
-				cp_mapSlice_v = make([]string, len(v))
-				copy(cp_mapSlice_v, v)
+		for k2, v2 := range o.mapSlice {
+			var cp_mapSlice_v2 []string
+			if v2 != nil {
+				cp_mapSlice_v2 = make([]string, len(v2))
+				copy(cp_mapSlice_v2, v2)
 			}
-			cp.mapSlice[k] = cp_mapSlice_v
+			cp.mapSlice[k2] = cp_mapSlice_v2
 		}
 	}
 	return cp
@@ -325,10 +327,10 @@ func (o SomeStruct2) DeepCopy() SomeStruct2 {
 	var cp SomeStruct2 = o
 	if o.mapStruct != nil {
 		cp.mapStruct = make(map[string]SomeStruct, len(o.mapStruct))
-		for k, v := range o.mapStruct {
-			var cp_mapStruct_v SomeStruct
-			cp_mapStruct_v = v.DeepCopy()
-			cp.mapStruct[k] = cp_mapStruct_v
+		for k2, v2 := range o.mapStruct {
+			var cp_mapStruct_v2 SomeStruct
+			cp_mapStruct_v2 = v2.DeepCopy()
+			cp.mapStruct[k2] = cp_mapStruct_v2
 		}
 	}
 	return cp
@@ -344,10 +346,10 @@ func (o StructCH) DeepCopy() StructCH {
 	if o.Nested != nil {
 		cp.Nested = make([]StructNested, len(o.Nested))
 		copy(cp.Nested, o.Nested)
-		for i := range o.Nested {
-			if o.Nested[i].B != nil {
-				cp.Nested[i].B = new(int)
-				*cp.Nested[i].B = *o.Nested[i].B
+		for i2 := range o.Nested {
+			if o.Nested[i2].B != nil {
+				cp.Nested[i2].B = new(int)
+				*cp.Nested[i2].B = *o.Nested[i2].B
 			}
 		}
 	}
@@ -363,6 +365,32 @@ func (o SomeStruct) DeepCopy() SomeStruct {
 	var cp SomeStruct = o
 	if o.AnotherStruct != nil {
 		cp.AnotherStruct = o.AnotherStruct.DeepCopy()
+	}
+	return cp
+}`
+
+	Issue12NestedSlices = `// generated by deep-copy; DO NOT EDIT.
+
+package testdata
+
+// DeepCopy generates a deep copy of I12NestedSlices
+func (o I12NestedSlices) DeepCopy() I12NestedSlices {
+	var cp I12NestedSlices = o
+	if o.Slices != nil {
+		cp.Slices = make([][][]int, len(o.Slices))
+		copy(cp.Slices, o.Slices)
+		for i2 := range o.Slices {
+			if o.Slices[i2] != nil {
+				cp.Slices[i2] = make([][]int, len(o.Slices[i2]))
+				copy(cp.Slices[i2], o.Slices[i2])
+				for i3 := range o.Slices[i2] {
+					if o.Slices[i2][i3] != nil {
+						cp.Slices[i2][i3] = make([]int, len(o.Slices[i2][i3]))
+						copy(cp.Slices[i2][i3], o.Slices[i2][i3])
+					}
+				}
+			}
+		}
 	}
 	return cp
 }`
