@@ -339,6 +339,10 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	under := m.Underlying()
 	switch v := under.(type) {
 	case *types.Struct:
+
+		/*fmt.Fprintf(w, `%s = %s
+		`, sink, source)*/
+
 		for i := 0; i < v.NumFields(); i++ {
 			field := v.Field(i)
 			if needExported && !field.Exported() {
@@ -456,6 +460,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			if b.Len() > 0 {
 				ksink = copyKSink
 				fmt.Fprintf(w, "var %s %s\n", ksink, kkind)
+				fmt.Fprintf(w, "%s =  %s\n", ksink, source)
 				b.WriteTo(w)
 			}
 		}
@@ -469,6 +474,7 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 			if b.Len() > 0 {
 				vsink = copyVSink
 				fmt.Fprintf(w, "var %s %s\n", vsink, vkind)
+				fmt.Fprintf(w, "%s =  %s\n", vsink, val)
 				b.WriteTo(w)
 			}
 		}
