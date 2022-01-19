@@ -339,10 +339,6 @@ func walkType(source, sink, x string, m types.Type, w io.Writer, imports map[str
 	under := m.Underlying()
 	switch v := under.(type) {
 	case *types.Struct:
-
-		/*fmt.Fprintf(w, `%s = %s
-		`, sink, source)*/
-
 		for i := 0; i < v.NumFields(); i++ {
 			field := v.Field(i)
 			if needExported && !field.Exported() {
