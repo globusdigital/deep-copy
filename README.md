@@ -45,6 +45,11 @@ B`. To skip deeply copying the inner 'I' field, one can specify `--skip B.I`.
 Slice and Map members can also be skipped, by adding `[i]` and `[k]`
 respectively.
 
+To specify a max depth of deep copying, use `--maxdepth` option. It stops
+deep copying at a given depth, with a warning message spotting a place
+the deep copying has been stopped. It might especially be useful when
+one or more structs have circular references.
+
 ## Usage
 
 Pass either path to the folder containing the types or the module name:
