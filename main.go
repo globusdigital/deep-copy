@@ -18,6 +18,7 @@ import (
 
 var (
 	pointerReceiverF = flag.Bool("pointer-receiver", false, "the generated receiver type")
+	maxDepthF        = flag.Int("maxdepth", 0, "max depth of deep copying")
 
 	typesF  typesVal
 	skipsF  skipsVal
@@ -136,6 +137,7 @@ func main() {
 
 	a := &app{
 		isPtrRecv: *pointerReceiverF,
+		maxDepth:  *maxDepthF,
 	}
 
 	b, err := a.run(flag.Args()[0], typesF, skipsF)
@@ -155,6 +157,7 @@ func main() {
 
 type app struct {
 	isPtrRecv bool
+	maxDepth  int
 }
 
 func (a *app) run(path string, types typesVal, skips skipsVal) ([]byte, error) {
@@ -329,6 +332,16 @@ func (a *app) walkType(source, sink, x string, m types.Type, w io.Writer, import
 	initial := depth == 0
 	if m == nil {
 		return
+	}
+
+	if a.maxDepth > 0 {
+		sinkDepth := strings.Count(sink, ".")
+		if sinkDepth >= a.maxDepth {
+			p := strings.Split(sink, ".")
+			stoppedAt := strings.TrimSuffix(fmt.Sprintf("%s.%s", generating[0], strings.Join(p[1:len(p)-1], ".")), ".")
+			log.Printf("WARNING: reached max depth %d. stop recursion at %s", sinkDepth, stoppedAt)
+			return
+		}
 	}
 
 	var needExported bool
