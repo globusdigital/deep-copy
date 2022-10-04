@@ -40,7 +40,10 @@ func Test_run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := run(tt.path, tt.types, tt.skips, tt.pointer)
+			a := &app{
+				isPtrRecv: tt.pointer,
+			}
+			got, err := a.run(tt.path, tt.types, tt.skips)
 			if err != nil {
 				t.Fatal(err)
 			}
