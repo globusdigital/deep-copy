@@ -502,14 +502,14 @@ func (a *app) walkType(source, sink, x string, m types.Type, w io.Writer, import
 
 }
 
-var cleanRE = regexp.MustCompile(`\W`)
+var importSanitizerRE = regexp.MustCompile(`\W`)
 
 func getElemType(t types.Type, x string, imports map[string]string) string {
 	kind := types.TypeString(t, func(p *types.Package) string {
 		name := p.Name()
 		if name != x {
 			if path, ok := imports[name]; ok && path != p.Path() {
-				name = cleanRE.ReplaceAllString(p.Path(), "_")
+				name = importSanitizerRE.ReplaceAllString(p.Path(), "_")
 			}
 			imports[name] = p.Path()
 			return name
