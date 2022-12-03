@@ -20,6 +20,7 @@ import (
 var (
 	pointerReceiverF = flag.Bool("pointer-receiver", false, "the generated receiver type")
 	maxDepthF        = flag.Int("maxdepth", 0, "max depth of deep copying")
+	methodF          = flag.String("method", "DeepCopy", "deep copy method name")
 
 	typesF  typesVal
 	skipsF  skipsVal
@@ -139,6 +140,7 @@ func main() {
 	a := &app{
 		isPtrRecv: *pointerReceiverF,
 		maxDepth:  *maxDepthF,
+		method:    *methodF,
 	}
 
 	b, err := a.run(flag.Args()[0], typesF, skipsF)
@@ -159,6 +161,7 @@ func main() {
 type app struct {
 	isPtrRecv bool
 	maxDepth  int
+	method    string
 }
 
 func (a *app) run(path string, types typesVal, skips skipsVal) ([]byte, error) {
@@ -220,10 +223,10 @@ func (a *app) generateFunc(p *packages.Package, obj object, imports map[string]s
 	kind := obj.Obj().Name()
 
 	source := "o"
-	fmt.Fprintf(&buf, `// DeepCopy generates a deep copy of %s%s
-func (o %s%s) DeepCopy() %s%s {
+	fmt.Fprintf(&buf, `// %s generates a deep copy of %s%s
+func (o %s%s) %s() %s%s {
 	var cp %s = %s%s
-`, ptr, kind, ptr, kind, ptr, kind, kind, ptr, source)
+`, a.method, ptr, kind, ptr, kind, a.method, ptr, kind, kind, ptr, source)
 
 	a.walkType(source, "cp", p.Name, obj, &buf, imports, skips, generating, 0)
 
@@ -529,7 +532,7 @@ func (a *app) hasDeepCopy(v methoder, generating []object) (hasMethod, isPointer
 
 	for i := 0; i < v.NumMethods(); i++ {
 		m := v.Method(i)
-		if m.Name() != "DeepCopy" {
+		if m.Name() != a.method {
 			continue
 		}
 
@@ -561,17 +564,17 @@ func (a *app) reuseDeepCopy(source, sink string, v methoder, pointer bool, gener
 
 	if hasMethod {
 		if pointer == isPointer {
-			fmt.Fprintf(w, "%s = %s.DeepCopy()\n", sink, source)
+			fmt.Fprintf(w, "%s = %s.%s()\n", sink, source, a.method)
 		} else if pointer {
-			fmt.Fprintf(w, `retV := %s.DeepCopy()
+			fmt.Fprintf(w, `retV := %s.%s()
 	%s = &retV
-`, source, sink)
+`, source, a.method, sink)
 		} else {
 			fmt.Fprintf(w, `{
-	retV := %s.DeepCopy()
+	retV := %s.%s()
 	%s = *retV
 }
-`, source, sink)
+`, source, a.method, sink)
 		}
 	}
 
