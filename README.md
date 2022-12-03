@@ -50,6 +50,8 @@ deep copying at a given depth, with a warning message spotting a place
 the deep copying has been stopped. It might especially be useful when
 one or more structs have circular references.
 
+To change a method name of deep copying, use `--method` option.
+
 ## Usage
 
 Pass either path to the folder containing the types or the module name:
@@ -64,6 +66,7 @@ Here is the full set of supported flags:
 ```bash
 deep-copy \ 
   [-o /output/path.go] \
+  [--method DeepCopy] \
   [--pointer-receiver] \
   [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]] 
   [--type Type1 --type Type2\ \ 
