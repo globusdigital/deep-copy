@@ -113,7 +113,7 @@ func (o Foo) DeepCopy() Foo {
 		for k, v := range o.Map {
 			var cpv *Bar
 			if v != nil {
-				cpv = new(*Bar)
+				cpv = new(Bar)
 				*cpv = *v
 				if v.Slice != nil {
 					cpv.Slice = make([]string, len(v.Slice))
