@@ -415,7 +415,10 @@ func (a *app) walkType(source, sink, x string, m types.Type, w io.Writer, import
 			fmt.Fprintf(w, `    for %s := range %s {
 `, idx, source)
 
-			b.WriteTo(w)
+			_, err := b.WriteTo(w)
+			if err != nil {
+				fmt.Println(err)
+			}
 
 			fmt.Fprintf(w, "}\n")
 		}
@@ -481,7 +484,11 @@ func (a *app) walkType(source, sink, x string, m types.Type, w io.Writer, import
 			if b.Len() > 0 {
 				ksink = copyKSink
 				fmt.Fprintf(w, "var %s %s\n", ksink, kkind)
-				b.WriteTo(w)
+				fmt.Fprintf(w, "%s =  %s\n", ksink, source)
+				_, err := b.WriteTo(w)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 
@@ -494,7 +501,11 @@ func (a *app) walkType(source, sink, x string, m types.Type, w io.Writer, import
 			if b.Len() > 0 {
 				vsink = copyVSink
 				fmt.Fprintf(w, "var %s %s\n", vsink, vkind)
-				b.WriteTo(w)
+				fmt.Fprintf(w, "%s =  %s\n", vsink, val)
+				_, err := b.WriteTo(w)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 

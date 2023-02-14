@@ -84,6 +84,7 @@ func (o Foo) DeepCopy() Foo {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k2, v2 := range o.Map {
 			var cp_Map_v2 *Bar
+			cp_Map_v2 = v2
 			if v2 != nil {
 				cp_Map_v2 = new(Bar)
 				*cp_Map_v2 = *v2
@@ -115,6 +116,7 @@ func (o *Foo) DeepCopy() *Foo {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k2, v2 := range o.Map {
 			var cp_Map_v2 *Bar
+			cp_Map_v2 = v2
 			if v2 != nil {
 				cp_Map_v2 = new(Bar)
 				*cp_Map_v2 = *v2
@@ -146,6 +148,7 @@ func (o *Foo) DeepCopy() *Foo {
 		cp.Map = make(map[string]*Bar, len(o.Map))
 		for k2, v2 := range o.Map {
 			var cp_Map_v2 *Bar
+			cp_Map_v2 = v2
 			if v2 != nil {
 				cp_Map_v2 = new(Bar)
 				*cp_Map_v2 = *v2
@@ -335,10 +338,12 @@ func (o SomeStruct2) DeepCopy() SomeStruct2 {
 		cp.mapStruct = make(map[string]SomeStruct, len(o.mapStruct))
 		for k2, v2 := range o.mapStruct {
 			var cp_mapStruct_v2 SomeStruct
+			cp_mapStruct_v2 = v2
 			if v2.mapSlice != nil {
 				cp_mapStruct_v2.mapSlice = make(map[string][]string, len(v2.mapSlice))
 				for k4, v4 := range v2.mapSlice {
 					var cp_mapStruct_v2_mapSlice_v4 []string
+					cp_mapStruct_v2_mapSlice_v4 = v4
 					if v4 != nil {
 						cp_mapStruct_v2_mapSlice_v4 = make([]string, len(v4))
 						copy(cp_mapStruct_v2_mapSlice_v4, v4)
@@ -363,6 +368,7 @@ func (o SomeStruct) DeepCopy() SomeStruct {
 		cp.mapSlice = make(map[string][]string, len(o.mapSlice))
 		for k2, v2 := range o.mapSlice {
 			var cp_mapSlice_v2 []string
+			cp_mapSlice_v2 = v2
 			if v2 != nil {
 				cp_mapSlice_v2 = make([]string, len(v2))
 				copy(cp_mapSlice_v2, v2)
@@ -380,6 +386,7 @@ func (o SomeStruct2) DeepCopy() SomeStruct2 {
 		cp.mapStruct = make(map[string]SomeStruct, len(o.mapStruct))
 		for k2, v2 := range o.mapStruct {
 			var cp_mapStruct_v2 SomeStruct
+			cp_mapStruct_v2 = v2
 			cp_mapStruct_v2 = v2.DeepCopy()
 			cp.mapStruct[k2] = cp_mapStruct_v2
 		}
@@ -457,6 +464,7 @@ func (o I12StructWithMapOfSlices) DeepCopy() I12StructWithMapOfSlices {
 		cp.Sc1 = make(map[string][]I12StructWithSlices, len(o.Sc1))
 		for k2, v2 := range o.Sc1 {
 			var cp_Sc1_v2 []I12StructWithSlices
+			cp_Sc1_v2 = v2
 			if v2 != nil {
 				cp_Sc1_v2 = make([]I12StructWithSlices, len(v2))
 				copy(cp_Sc1_v2, v2)
