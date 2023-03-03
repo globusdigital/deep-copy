@@ -126,33 +126,31 @@ func main() {
 	sl := deepcopy.SkipLists(skipsF)
 	generator := deepcopy.NewGenerator(*pointerReceiverF, *methodF, sl, *maxDepthF)
 
-	b, err := run(generator, flag.Args()[0], typesF)
-	if err != nil {
-		log.Fatalln("Error generating deep copy method:", err)
-	}
-
 	output, err := outputF.Open()
 	if err != nil {
 		log.Fatalln("Error initializing output file:", err)
 	}
-	if _, err := output.Write(b); err != nil {
-		log.Fatalln("Error writing result to file:", err)
+
+	err = run(generator, output, flag.Args()[0], typesF)
+	if err != nil {
+		log.Fatalln("Error generating deep copy method:", err)
 	}
+
 	output.Close()
 }
 
 func run(
-	g deepcopy.Generator, path string, types typesVal,
-) ([]byte, error) {
+	g deepcopy.Generator, w io.Writer, path string, types typesVal,
+) error {
 	packages, err := load(path)
 	if err != nil {
-		return nil, fmt.Errorf("loading package: %v", err)
+		return fmt.Errorf("loading package: %v", err)
 	}
 	if len(packages) == 0 {
-		return nil, errors.New("no package found")
+		return errors.New("no package found")
 	}
 
-	return g.Generate(types, packages[0])
+	return g.Generate(w, types, packages[0])
 }
 
 func load(patterns string) ([]*packages.Package, error) {

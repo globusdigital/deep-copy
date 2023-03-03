@@ -52,11 +52,12 @@ func Test_run(t *testing.T) {
 			}
 			g := deepcopy.NewGenerator(tt.pointer, method,
 				deepcopy.SkipLists(tt.skips), tt.maxdepth)
-			got, err := run(g, tt.path, tt.types)
+			var buf bytes.Buffer
+			err := run(g, &buf, tt.path, tt.types)
 			if err != nil {
 				t.Fatal(err)
 			}
-			got = normalizeComment(got)
+			got := normalizeComment(buf.Bytes())
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("generateFile() diff = %s", diff)
 			}
