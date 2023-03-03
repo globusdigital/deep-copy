@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/globusdigital/deep-copy/deepcopy"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -49,12 +50,9 @@ func Test_run(t *testing.T) {
 			if tt.method != "" {
 				method = tt.method
 			}
-			a := &app{
-				isPtrRecv: tt.pointer,
-				maxDepth:  tt.maxdepth,
-				method:    method,
-			}
-			got, err := a.run(tt.path, tt.types, tt.skips)
+			g := deepcopy.NewGenerator(tt.pointer, method,
+				deepcopy.SkipLists(tt.skips), tt.maxdepth)
+			got, err := run(g, tt.path, tt.types)
 			if err != nil {
 				t.Fatal(err)
 			}
