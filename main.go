@@ -17,6 +17,7 @@ var (
 	pointerReceiverF = flag.Bool("pointer-receiver", false, "the generated receiver type")
 	maxDepthF        = flag.Int("maxdepth", 0, "max depth of deep copying")
 	methodF          = flag.String("method", "DeepCopy", "deep copy method name")
+	reuseReceiverF   = flag.Bool("reuse-receiver", false, "reuse receiver variable name")
 
 	typesF  typesVal
 	skipsF  skipsVal
@@ -124,7 +125,7 @@ func main() {
 	}
 
 	sl := deepcopy.SkipLists(skipsF)
-	generator := deepcopy.NewGenerator(*pointerReceiverF, *methodF, sl, *maxDepthF)
+	generator := deepcopy.NewGenerator(*pointerReceiverF, *methodF, sl, *maxDepthF, *reuseReceiverF)
 
 	output, err := outputF.Open()
 	if err != nil {
@@ -154,7 +155,12 @@ func run(
 }
 
 func load(patterns string) ([]*packages.Package, error) {
+	modes := packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedImports
+	if *reuseReceiverF {
+		modes |= packages.NeedSyntax
+	}
+
 	return packages.Load(&packages.Config{
-		Mode: packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedImports,
+		Mode: modes,
 	}, patterns)
 }
