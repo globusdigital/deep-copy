@@ -18,9 +18,10 @@ var (
 	maxDepthF        = flag.Int("maxdepth", 0, "max depth of deep copying")
 	methodF          = flag.String("method", "DeepCopy", "deep copy method name")
 
-	typesF  typesVal
-	skipsF  skipsVal
-	outputF outputVal
+	typesF     typesVal
+	skipsF     skipsVal
+	outputF    outputVal
+	buildTagsF buildTagsVal
 )
 
 type typesVal []string
@@ -106,10 +107,22 @@ func (f *outputVal) Open() (io.WriteCloser, error) {
 	return f.file, nil
 }
 
+type buildTagsVal []string
+
+func (b *buildTagsVal) String() string {
+	return strings.Join(*b, ",")
+}
+
+func (b *buildTagsVal) Set(v string) error {
+	*b = append(*b, v)
+	return nil
+}
+
 func init() {
 	flag.Var(&typesF, "type", "the concrete type. Multiple flags can be specified")
 	flag.Var(&skipsF, "skip", "comma-separated field/slice/map selectors to shallow copy. Multiple flags can be specified")
 	flag.Var(&outputF, "o", "the output file to write to. Defaults to STDOUT")
+	flag.Var(&buildTagsF, "tags", "comma-separated build tags to add to generated file")
 }
 
 func main() {
@@ -124,7 +137,7 @@ func main() {
 	}
 
 	sl := deepcopy.SkipLists(skipsF)
-	generator := deepcopy.NewGenerator(*pointerReceiverF, *methodF, sl, *maxDepthF)
+	generator := deepcopy.NewGenerator(*pointerReceiverF, *methodF, sl, *maxDepthF, buildTagsF)
 
 	output, err := outputF.Open()
 	if err != nil {
