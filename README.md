@@ -23,6 +23,10 @@ To specify a pointer receiver for the method, an optional `--pointer-receiver`
 boolean flag can be specified. The flag will also govern whether the return
 type is a pointer as well.
 
+To specify build tags in the generated code, an optional `--tags` comma separated
+list flag can be specified. The flag will add all items as build tags to the
+generated code.
+
 It might also be desirable to skip deeply copying certain fields, slice
 members, or map members. To achieve that, selectors can be specified in the
 optional comma-separated `--skip` flag. Multiple `--skip` flags can be
@@ -64,12 +68,13 @@ deep-copy <flags> github.com/globusdigital/deep-copy/some/sub/packages
 Here is the full set of supported flags:
 
 ```bash
-deep-copy \ 
+deep-copy \
   [-o /output/path.go] \
   [--method DeepCopy] \
   [--pointer-receiver] \
-  [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]] 
-  [--type Type1 --type Type2\ \ 
+  [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]]
+  [--type Type1 --type Type2\ \
+  [--tags mytag,anotherTag ] \ \
   /path/to/package/containing/type
 ```
 
