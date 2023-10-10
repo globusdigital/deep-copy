@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/globusdigital/deep-copy/deepcopy"
+	"github.com/urandom/deep-copy/deepcopy"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -571,8 +571,8 @@ func (o *Depth1) DeepCopy() *Depth1 {
 package import_alias
 
 import (
-	github_com_globusdigital_deep_copy_testdata_import_alias_another_item "github.com/globusdigital/deep-copy/testdata/import_alias/another/item"
-	"github.com/globusdigital/deep-copy/testdata/import_alias/item"
+	github_com_urandom_deep_copy_testdata_import_alias_another_item "github.com/urandom/deep-copy/testdata/import_alias/another/item"
+	"github.com/urandom/deep-copy/testdata/import_alias/item"
 )
 
 // DeepCopy generates a deep copy of Data
@@ -583,7 +583,7 @@ func (o Data) DeepCopy() Data {
 		copy(cp.Items, o.Items)
 	}
 	if o.AnotherItems != nil {
-		cp.AnotherItems = make([]github_com_globusdigital_deep_copy_testdata_import_alias_another_item.Item, len(o.AnotherItems))
+		cp.AnotherItems = make([]github_com_urandom_deep_copy_testdata_import_alias_another_item.Item, len(o.AnotherItems))
 		copy(cp.AnotherItems, o.AnotherItems)
 	}
 	return cp

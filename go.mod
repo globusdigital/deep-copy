@@ -1,4 +1,4 @@
-module github.com/globusdigital/deep-copy
+module github.com/urandom/deep-copy
 
 go 1.13
 

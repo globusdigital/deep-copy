@@ -1,11 +1,11 @@
-<a href="https://github.com/globusdigital/deep-copy/actions?query=workflow%3ACI">
-    <img src="https://github.com/globusdigital/deep-copy/workflows/CI/badge.svg" alt="GitHub Actions: CI">
+<a href="https://github.com/urandom/deep-copy/actions?query=workflow%3ACI">
+    <img src="https://github.com/urandom/deep-copy/workflows/CI/badge.svg" alt="GitHub Actions: CI">
 </a>
-<a href='https://coveralls.io/github/globusdigital/deep-copy'>
-    <img src='https://coveralls.io/repos/github/globusdigital/deep-copy/badge.svg' alt='Coverage Status' />
+<a href='https://coveralls.io/github/urandom/deep-copy'>
+    <img src='https://coveralls.io/repos/github/urandom/deep-copy/badge.svg' alt='Coverage Status' />
 </a>
-<a href="https://goreportcard.com/report/github.com/globusdigital/deep-copy">
-    <img src="https://goreportcard.com/badge/github.com/globusdigital/deep-copy" alt="GoReportCard">
+<a href="https://goreportcard.com/report/github.com/urandom/deep-copy">
+    <img src="https://goreportcard.com/badge/github.com/urandom/deep-copy" alt="GoReportCard">
 </a>
 
 # deep-copy
@@ -58,8 +58,8 @@ Pass either path to the folder containing the types or the module name:
 
 ```bash
 deep-copy <flags> /path/to/package/containing/type
-deep-copy <flags> github.com/globusdigital/deep-copy
-deep-copy <flags> github.com/globusdigital/deep-copy/some/sub/packages
+deep-copy <flags> github.com/urandom/deep-copy
+deep-copy <flags> github.com/urandom/deep-copy/some/sub/packages
 ```
 Here is the full set of supported flags:
 
