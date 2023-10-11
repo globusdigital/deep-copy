@@ -1,9 +1,6 @@
 <a href="https://github.com/globusdigital/deep-copy/actions?query=workflow%3ACI">
     <img src="https://github.com/globusdigital/deep-copy/workflows/CI/badge.svg" alt="GitHub Actions: CI">
 </a>
-<a href='https://coveralls.io/github/globusdigital/deep-copy'>
-    <img src='https://coveralls.io/repos/github/globusdigital/deep-copy/badge.svg' alt='Coverage Status' />
-</a>
 <a href="https://goreportcard.com/report/github.com/globusdigital/deep-copy">
     <img src="https://goreportcard.com/badge/github.com/globusdigital/deep-copy" alt="GoReportCard">
 </a>
