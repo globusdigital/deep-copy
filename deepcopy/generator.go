@@ -37,19 +37,55 @@ type Generator struct {
 	fns     [][]byte
 }
 
-func NewGenerator(
-	isPtrRecv bool, methodName string, skipLists SkipLists, maxDepth int, buildTags []string,
-) Generator {
-	return Generator{
-		isPtrRecv:  isPtrRecv,
-		methodName: methodName,
-		maxDepth:   maxDepth,
-		skipLists:  skipLists,
-		buildTags:  buildTags,
+// GeneratorOption is a function to specify option for NewGenerator.
+type GeneratorOption func(*Generator)
 
-		imports: map[string]string{},
-		fns:     [][]byte{},
+// IsPtrRecv is an option to specify isPtrRecv.
+func IsPtrRecv(f bool) GeneratorOption {
+	return func(g *Generator) {
+		g.isPtrRecv = f
 	}
+}
+
+// WithMethodName is an option to specify methodName.
+func WithMethodName(n string) GeneratorOption {
+	return func(g *Generator) {
+		g.methodName = n
+	}
+}
+
+// WithMaxDepth is an option to specify maxDepth.
+func WithMaxDepth(d int) GeneratorOption {
+	return func(g *Generator) {
+		g.maxDepth = d
+	}
+}
+
+// WithSkipLists is an option to specify skipLists
+func WithSkipLists(sl SkipLists) GeneratorOption {
+	return func(g *Generator) {
+		g.skipLists = sl
+	}
+}
+
+// WithBuildTags is an option to specify buildTags
+func WithBuildTags(bts []string) GeneratorOption {
+	return func(g *Generator) {
+		g.buildTags = bts
+	}
+}
+
+// NewGenerator generates a Generator with options.
+func NewGenerator(opts ...GeneratorOption) Generator {
+	g := Generator{
+		methodName: "DeepCopy",
+		imports:    map[string]string{},
+		fns:        [][]byte{},
+	}
+	for _, opt := range opts {
+		opt(&g)
+	}
+	return g
 }
 
 type object interface {
