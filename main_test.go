@@ -52,8 +52,13 @@ func Test_run(t *testing.T) {
 			if tt.method != "" {
 				method = tt.method
 			}
-			g := deepcopy.NewGenerator(tt.pointer, method,
-				deepcopy.SkipLists(tt.skips), tt.maxdepth, tt.buildTags)
+			g := deepcopy.NewGenerator(
+				deepcopy.IsPtrRecv(tt.pointer),
+				deepcopy.WithMethodName(method),
+				deepcopy.WithSkipLists(deepcopy.SkipLists(tt.skips)),
+				deepcopy.WithMaxDepth(tt.maxdepth),
+				deepcopy.WithBuildTags(tt.buildTags),
+			)
 			var buf bytes.Buffer
 			err := run(g, &buf, tt.path, tt.types)
 			if err != nil {

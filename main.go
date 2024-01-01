@@ -137,7 +137,13 @@ func main() {
 	}
 
 	sl := deepcopy.SkipLists(skipsF)
-	generator := deepcopy.NewGenerator(*pointerReceiverF, *methodF, sl, *maxDepthF, buildTagsF)
+	generator := deepcopy.NewGenerator(
+		deepcopy.IsPtrRecv(*pointerReceiverF),
+		deepcopy.WithMethodName(*methodF),
+		deepcopy.WithSkipLists(sl),
+		deepcopy.WithMaxDepth(*maxDepthF),
+		deepcopy.WithBuildTags(buildTagsF),
+	)
 
 	output, err := outputF.Open()
 	if err != nil {
