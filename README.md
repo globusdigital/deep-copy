@@ -53,6 +53,8 @@ one or more structs have circular references.
 
 To change a method name of deep copying, use `--method` option.
 
+To match receiver names with existing ones, use `--reuse-receiver` option.
+
 ## Usage
 
 Pass either path to the folder containing the types or the module name:
@@ -69,9 +71,10 @@ deep-copy \
   [-o /output/path.go] \
   [--method DeepCopy] \
   [--pointer-receiver] \
-  [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]]
-  [--type Type1 --type Type2\ \
-  [--tags mytag,anotherTag ] \ \
+  [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]] \
+  [--type Type1 --type Type2] \
+  [--tags mytag,anotherTag ] \
+  [--reuse-receiver] \
   /path/to/package/containing/type
 ```
 
