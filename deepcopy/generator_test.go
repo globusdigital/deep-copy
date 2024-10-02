@@ -70,6 +70,16 @@ func TestNewGenerator(t *testing.T) {
 		}, g)
 	})
 
+	t.Run("ReuseReceiverNames", func(t *testing.T) {
+		g := NewGenerator(ReuseReceiverNames(true))
+		assert.Equal(t, Generator{
+			methodName:    "DeepCopy",
+			reuseReceiver: true,
+			imports:       map[string]string{},
+			fns:           [][]byte{},
+		}, g)
+	})
+
 	t.Run("multiple options", func(t *testing.T) {
 		g := NewGenerator(
 			IsPtrRecv(true),
