@@ -53,6 +53,9 @@ one or more structs have circular references.
 
 To change a method name of deep copying, use `--method` option.
 
+To use a configuration file instead of command-line flags, use `--config` option.
+The configuration file should be in YAML format. See `config.example.yaml` for an example.
+
 ## Usage
 
 Pass either path to the folder containing the types or the module name:
@@ -62,10 +65,12 @@ deep-copy <flags> /path/to/package/containing/type
 deep-copy <flags> github.com/globusdigital/deep-copy
 deep-copy <flags> github.com/globusdigital/deep-copy/some/sub/packages
 ```
+
 Here is the full set of supported flags:
 
 ```bash
 deep-copy \
+  [--config /path/to/config.yaml] \
   [-o /output/path.go] \
   [--method DeepCopy] \
   [--pointer-receiver] \
@@ -74,6 +79,41 @@ deep-copy \
   [--tags mytag,anotherTag ] \ \
   /path/to/package/containing/type
 ```
+
+### Configuration File
+
+Instead of using command-line flags, you can use a YAML configuration file:
+
+```bash
+deep-copy --config config.yaml /path/to/package/containing/type
+```
+
+Example configuration file (`config.example.yaml`):
+
+```yaml
+pointer-receiver: true
+maxdepth: 5
+method: DeepCopy
+type:
+  - MyType
+skip:
+  - Field1
+  - Field2
+output: output.go
+build-tags:
+  - custom
+  - build
+```
+
+All fields in the configuration file are optional.
+
+**Priority order**: When both a configuration file and command-line flags are provided, the priority is as follows (highest to lowest):
+
+1. **Command-line flags** (highest priority)
+2. Configuration file values
+3. Default values (lowest priority)
+
+For example, if `config.yaml` contains `method: DeepCopy` and you run `deep-copy --config config.yaml --method Clone`, the `--method Clone` flag will take precedence, and `Clone` will be used as the method name.
 
 ## Example
 
