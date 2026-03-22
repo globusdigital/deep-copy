@@ -74,9 +74,9 @@ deep-copy \
   [-o /output/path.go] \
   [--method DeepCopy] \
   [--pointer-receiver] \
-  [--skip Selector1,Selector.Two --skip Selector2[i], Selector.Three[k]]
-  [--type Type1 --type Type2\ \
-  [--tags mytag,anotherTag ] \ \
+  [--skip Selector1,Selector.Two --skip Selector2[i],Selector.Three[k]] \
+  [--type Type1 --type Type2] \
+  [--tags mytag,anotherTag] \
   /path/to/package/containing/type
 ```
 
