@@ -213,6 +213,18 @@ func Test_loadConfigFile(t *testing.T) {
 			wantErr:    true,
 		},
 		{
+			name: "unknown field in config",
+			configYAML: `method: M
+typo-field: true`,
+			wantErr: true,
+		},
+		{
+			name: "wrong key name (e.g. types instead of type)",
+			configYAML: `types:
+  - A`,
+			wantErr: true,
+		},
+		{
 			name: "applies all fields when no CLI flags",
 			configYAML: `pointer-receiver: true
 maxdepth: 5

@@ -42,6 +42,7 @@ func loadConfigFile(configPath string, flagsSetOnCLI map[string]struct{}) error 
 
 	var cfg config
 	decoder := yaml.NewDecoder(file)
+	decoder.KnownFields(true)
 	if err := decoder.Decode(&cfg); err != nil {
 		return fmt.Errorf("decoding config file: %w", err)
 	}
