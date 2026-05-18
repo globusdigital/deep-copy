@@ -14,6 +14,7 @@ import (
 )
 
 var (
+	configFileF      = flag.String("config", "", "path to config file (YAML format)")
 	pointerReceiverF = flag.Bool("pointer-receiver", false, "the generated receiver type")
 	maxDepthF        = flag.Int("maxdepth", 0, "max depth of deep copying")
 	methodF          = flag.String("method", "DeepCopy", "deep copy method name")
@@ -127,6 +128,10 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	if err := loadConfig(); err != nil {
+		log.Fatalf("Error loading configuration: %v", err)
+	}
 
 	if len(typesF) == 0 || typesF[0] == "" {
 		log.Fatalln("no type given")

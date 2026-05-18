@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/globusdigital/deep-copy/config.schema.json",
+  "title": "Deep Copy Configuration Schema",
+  "description": "Configuration schema for deep-copy tool",
+  "type": "object",
+  "properties": {
+    "pointer-receiver": {
+      "type": "boolean",
+      "description": "Specify whether to use a pointer receiver for the generated method. The flag also governs whether the return type is a pointer as well."
+    },
+    "maxdepth": {
+      "type": "integer",
+      "description": "Specify the maximum depth of deep copying. It stops deep copying at a given depth, with a warning message indicating where the deep copying has been stopped. This is especially useful when one or more structs have circular references.",
+      "minimum": 0
+    },
+    "method": {
+      "type": "string",
+      "description": "Change the method name of deep copying. Defaults to 'DeepCopy'."
+    },
+    "type": {
+      "type": "array",
+      "description": "List of type names to generate deep copy methods for. Multiple types can be specified for the given package.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "skip": {
+      "type": "array",
+      "description": "field/slice/map selectors to shallow copy instead of deep copy, one YAML string per entry. Within each string, use commas to separate multiple selectors (same as repeated --skip flags on the CLI). Match the number of entries to the number of types when using multiple types. Use field selectors like 'B' to skip a field, 'B.I' to skip an inner field, '[i]' for slice members, and '[k]' for map members.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "output": {
+      "type": "string",
+      "description": "Output file path for the generated code. Defaults to STDOUT if not specified."
+    },
+    "build-tags": {
+      "type": "array",
+      "description": "Build tags to add to the generated code file (one tag per array element; same as repeating --tags on the CLI).",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

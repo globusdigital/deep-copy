@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=config.schema.json
+
+pointer-receiver: true
+maxdepth: 5
+method: DeepCopy
+type:
+  - MyType
+skip:
+  - Field1
+  - Field2
+output: output.go
+build-tags:
+  - custom
+  - build
